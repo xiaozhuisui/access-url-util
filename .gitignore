@@ -1,0 +1,7 @@
+.umi
+.umi-test
+node_modules
+.DS_Store
+lib/**
+lib/*
+lib

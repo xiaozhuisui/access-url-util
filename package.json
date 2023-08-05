@@ -1,0 +1,23 @@
+{
+  "name": "bs-i18n-access-utils",
+  "version": "1.0.0",
+  "description": "比升生成页面权限点以及i18n工具",
+  "main": "lib/main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "watch": "webpack --watch",
+    "build": "webpack"
+  },
+  "devDependencies": {
+    "node-polyfill-webpack-plugin": "^2.0.1",
+    "ts-loader": "^9.4.4",
+    "typescript": "^5.1.6",
+    "webpack": "^5.88.2",
+    "webpack-cli": "^5.1.4"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "axios": "^1.4.0"
+  }
+}
