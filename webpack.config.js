@@ -5,6 +5,7 @@ module.exports = {
     filename: "[name].js",
     path: path.resolve(__dirname, "lib"),
     clean: true,
+    libraryTarget: 'commonjs2',
   },
   resolve: {
     extensions: [".ts", ".js"],

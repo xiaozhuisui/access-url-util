@@ -1,19 +1,23 @@
-import { handi18n } from "./utils";
-
 const fs = require("fs");
 const path = require("path");
-export function i18nUtils(dir: string, fileNameList?: string[]) {
+const { add } = require("lodash");
+const { handI18n } = require("./utils");
+function i18nUtil(dir: string, fileNameList?: string[]) {
+  const targetDir = path.join(process.cwd(), dir);
+  const localesGather: { [key: string]: "string" } = {};
   if (fileNameList) {
-    fileNameList.forEach((fileName) => {});
+    fileNameList.forEach((fileName) => {
+      const currentDirName = path.join(targetDir,fileName);
+      handI18n(currentDirName);
+    });
   }
-
-  fs.readdirSync(dir).forEach(function (file:any) {
-    var pathname = path.join(dir, file);
-
+  fs.readdirSync(targetDir).forEach(function (file: any) {
+    var pathname = path.join(targetDir, file);
     if (fs.statSync(pathname).isDirectory()) {
       return;
     } else {
-      handi18n(pathname);
+      handI18n(pathname, localesGather);
     }
   });
 }
+module.exports = { i18nUtil };
