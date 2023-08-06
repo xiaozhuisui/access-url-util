@@ -4,8 +4,8 @@ import { indexOf } from "lodash";
 const fs = require("fs");
 const utils: { [key: string]: Function } = {};
 // 正则 连续的中文 数字 空格 不含 纯数字 空格
-  // /[\u4E00-\u9FFF\u3000-\u303F]+(?:[\u4E00-\u9FFF\u3000-\u303F\d\s]*[\u4E00-\u9FFF\u3000-\u303F]+)*/;
-const TARGERT_ATTERN =/[\u4E00-\u9FFF\u3000-\u303F]+[\w\d\s]*/
+// /[\u4E00-\u9FFF\u3000-\u303F]+(?:[\u4E00-\u9FFF\u3000-\u303F\d\s]*[\u4E00-\u9FFF\u3000-\u303F]+)*/;
+const TARGERT_ATTERN = /[\u4E00-\u9FFF\u3000-\u303F]+[\w\d\s]*/;
 // 特殊情况
 const CROSS_ATTERN = /[\u4E00-\u9FFF]+(?:\s*\{\w+\}\s*)+/;
 // 匹配单行单标签 换行的不管
@@ -22,7 +22,7 @@ function handleMatchSingleTag(str: string):
     return false;
   }
   const matchs = str.match(TARGERT_ATTERN);
-  debugger
+  debugger;
   array.pop();
   return array.map((item, index) => {
     if ((item.indexOf("{{") || item.indexOf(":")) > item.indexOf("="))
@@ -71,8 +71,8 @@ function replacePos(
   const mystr =
     text.substring(0, start.value) +
     text.substring(start.value).replace(content, replacetext);
-  start.value = Math.max(mystr.indexOf(replacetext, start.value),start.value);
-  debugger
+  start.value = Math.max(mystr.indexOf(replacetext, start.value), start.value);
+  debugger;
   return mystr;
 }
 
@@ -106,6 +106,9 @@ utils.handI18n = function (
       let data: string =
         "import { i18nLocal, utilsLocal } from '@/utils/utils';\n " +
         fs.readFileSync(fileName, "utf8");
+      if (!TARGERT_ATTERN.test(data)) {
+        return;
+      }
       // 通过换行符处理 处理前后空格
       const strList = data.split("\n").map((item) => item.trim());
       strList.forEach((str) => {
