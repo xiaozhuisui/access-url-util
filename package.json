@@ -1,6 +1,6 @@
 {
   "name": "bs-i18n-access-utils",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "比升生成页面权限点以及i18n工具",
   "main": "lib/index.js",
   "scripts": {

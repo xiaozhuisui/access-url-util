@@ -1,8 +1,9 @@
 // @ts-ignore
 const fs = require("fs");
+// @ts-ignore
 const path = require("path");
 const inquirer = require("inquirer");
-const { handI18n } = require("./utils");
+const { handI18n,createLocalesGather } = require("./utils");
 async function i18nUtil(
   dir: string,
   filesList?: { fileName: string; jsxStrList: string[] }[]
@@ -27,16 +28,23 @@ async function i18nUtil(
       const currentDirName = path.join(targetDir, fileObject.fileName);
       handI18n(currentDirName, localesGather, fileObject.jsxStrList);
     });
+    createLocalesGather(localesGather,targetDir)
     return;
   }
+  // 遍历文件
   fs.readdirSync(targetDir).forEach(function (file: any) {
     var pathname = path.join(targetDir, file);
     // 如果是目录 就不处理
     if (fs.statSync(pathname).isDirectory()) {
       return;
     } else {
+      debugger
       handI18n(pathname, localesGather);
     }
   });
+  console.log(localesGather)
+  debugger
+  createLocalesGather(localesGather,targetDir)
 }
+
 module.exports = { i18nUtil };

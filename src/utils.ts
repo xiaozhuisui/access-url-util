@@ -1,12 +1,16 @@
 // @ts-ignore
 const fs = require("fs");
+// @ts-ignore
+const path = require("path");
 const utils: { [key: string]: Function } = {};
 // 正则 连续的中文 数字 空格 不含 纯数字 空格
 // /[\u4E00-\u9FFF\u3000-\u303F]+(?:[\u4E00-\u9FFF\u3000-\u303F\d\s]*[\u4E00-\u9FFF\u3000-\u303F]+)*/;
 // g开启全局匹配
 // const TARGERT_ATTERN = /[\u4E00-\u9FFF\u3000-\u303F]+[\w\d\s]*/g;
+// const TARGERT_ATTERN =
+//   /[\u4E00-\u9FFFa-zA-Z0-9]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9]*/g;
 const TARGERT_ATTERN =
-  /[\u4E00-\u9FFFa-zA-Z0-9]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9]*/g;
+  /[\u4E00-\u9FFFa-zA-Z0-9.]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9.]*/g;
 // 完整标签的正则
 // <div>111</div>
 const FULFILL_ATTERN = /(?<=<[^>]+>)[^<]+(?=<\/[^>]+>)/g;
@@ -80,10 +84,9 @@ function replacePos(
 
 utils.handI18n = function (
   fileName: string,
-  localesGather: { [key: string]: "string" },
+  localesGather: { [key: string]: string },
   jsxStrList: string[]
 ) {
-  debugger;
   // 公共前缀key
   let prefixKey = "";
   let pathList: string[] = [];
@@ -114,6 +117,7 @@ utils.handI18n = function (
       }
       // 通过换行符处理 处理前后空格
       const strList = data.split("\n").map((item) => item.trim());
+
       try {
         strList.forEach((str) => {
           // * /* 注释无需替换 tsx单行注释无需处理
@@ -159,6 +163,7 @@ utils.handI18n = function (
                   `utilsLocal(${JSON.stringify(prefixKey + item?.str)})`
                 );
               }
+              localesGather[prefixKey + item?.str] = item.str as string;
             });
             return;
           }
@@ -219,6 +224,8 @@ utils.handI18n = function (
                           `'${item.str}'`,
                           `utilsLocal(${JSON.stringify(prefixKey + item?.str)})`
                         );
+                        localesGather[prefixKey + item?.str] =
+                          item.str as string;
                       }
                     });
                     return;
@@ -262,8 +269,11 @@ utils.handI18n = function (
                             )})`
                           );
                         }
+                        localesGather[prefixKey + item.str] =
+                          item.str as string;
                       });
                     }
+                    // 标准括号里面的内容
                     data = replacePos(
                       data,
                       startIndex,
@@ -272,6 +282,10 @@ utils.handI18n = function (
                         prefixKey + fullTagContent
                       )})}`
                     );
+                    if (fullTagContent) {
+                      localesGather[prefixKey + fullTagContent] =
+                        fullTagContent;
+                    }
                     return;
                   }
 
@@ -286,21 +300,25 @@ utils.handI18n = function (
                       }[]
                     ).forEach((item) => {
                       if (item.type === "=") {
+                        // todo
                         // 需要加个花括号
                         data = replacePos(
                           data,
                           startIndex,
                           `"${item}"`,
-                          `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                          `{utilsLocal(${JSON.stringify(
+                            prefixKey + item.str
+                          )})}`
                         );
                       } else {
                         data = replacePos(
                           data,
                           startIndex,
                           `'${item}'`,
-                          `utilsLocal(${JSON.stringify(prefixKey + item)})`
+                          `utilsLocal(${JSON.stringify(prefixKey + item.str)})`
                         );
                       }
+                      localesGather[prefixKey + item.str] = item.str as string;
                     });
                     return;
                   }
@@ -318,11 +336,13 @@ utils.handI18n = function (
                           `${item}`,
                           `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
                         );
+                        localesGather[prefixKey + item] = item;
                       } else {
-                        data = data.replace(
-                          `'${item}'`,
-                          `utilsLocal(${JSON.stringify(prefixKey + item)})`
-                        );
+                        // todo
+                        // data = data.replace(
+                        //   `'${item}'`,
+                        //   `utilsLocal(${JSON.stringify(prefixKey + item)})`
+                        // );
                       }
                     });
                   }
@@ -336,6 +356,8 @@ utils.handI18n = function (
               `${fullTagContent}`,
               `{utilsLocal(${JSON.stringify(prefixKey + fullTagContent)})}`
             );
+            localesGather[prefixKey + fullTagContent] =
+              fullTagContent as string;
             return;
           }
 
@@ -349,21 +371,23 @@ utils.handI18n = function (
                 str: string | undefined;
               }[]
             ).forEach((item) => {
+              // todo
               if (item.type === "=") {
                 // 需要加个花括号
                 data = replacePos(
                   data,
                   startIndex,
-                  `"${item}"`,
-                  `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                  `"${item.str}"`,
+                  `{utilsLocal(${JSON.stringify(prefixKey + item.str)})}`
                 );
               } else {
                 data = replacePos(
                   data,
                   startIndex,
-                  `'${item}'`,
-                  `utilsLocal(${JSON.stringify(prefixKey + item)})`
+                  `'${item.str}'`,
+                  `utilsLocal(${JSON.stringify(prefixKey + item.str)})`
                 );
+                localesGather[prefixKey + (item.str || "")] = item.str || "";
               }
             });
             return;
@@ -374,7 +398,6 @@ utils.handI18n = function (
           // 最难的已经过去了 轻舟已过万重山 真j8难 睡觉
           if (TARGERT_ATTERN.test(str)) {
             const matchs = str.match(TARGERT_ATTERN);
-            debugger;
             matchs?.forEach((item) => {
               if (tagList.length) {
                 data = replacePos(
@@ -383,12 +406,12 @@ utils.handI18n = function (
                   `${item}`,
                   `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
                 );
+                localesGather[prefixKey + item] = item;
               } else {
                 if (jsxStrList) {
                   const findIndex = jsxStrList.findIndex(
                     (jItem) => jItem === item
                   );
-                  debugger;
                   if (findIndex !== -1) {
                     jsxStrList = jsxStrList.filter(
                       (_fItem, index) => index !== findIndex
@@ -400,6 +423,8 @@ utils.handI18n = function (
                       `${item}`,
                       `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
                     );
+                    localesGather[prefixKey + item] = item;
+                    // debugger;
                     return;
                   }
                 }
@@ -409,13 +434,14 @@ utils.handI18n = function (
                   `'${item}'`,
                   `utilsLocal(${JSON.stringify(prefixKey + item)})`
                 );
+                localesGather[prefixKey + item] = item;
               }
             });
           }
           // 不可能完美匹配 加个扩展
         });
       } catch (error) {
-        debugger;
+        console.log(error);
       }
       // {/*} 进行特殊处理
       fs.writeFile(fileName, data, "utf8", (err) => {
@@ -431,6 +457,27 @@ utils.handI18n = function (
     }
     return;
   }
+};
+
+utils.createLocalesGather = function (
+  localesGather: {
+    [key: string]: "string";
+  },
+  targetDir: string
+) {
+  debugger;
+  fs.writeFile(
+    path.join(targetDir, "/locales.json"),
+    JSON.stringify(localesGather),
+    "utf8",
+    (err) => {
+      if (err) {
+        console.error("写入文件时出错:", err);
+        return;
+      }
+      console.log("文件写入成功!");
+    }
+  );
 };
 
 module.exports = utils;
