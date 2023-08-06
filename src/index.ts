@@ -8,18 +8,18 @@ async function i18nUtil(
   dir: string,
   filesList?: { fileName: string; jsxStrList: string[] }[]
 ) {
-  // const { confirm } = await inquirer.prompt([
-  //   {
-  //     type: "confirm",
-  //     name: "confirm",
-  //     message: "你源码git提交了没有 没提交出问题风险自负！",
-  //     default: false,
-  //   },
-  // ]);
-  // if (!confirm) {
-  //   // 终止线程
-  //   process.exit(1);
-  // }
+  const { confirm } = await inquirer.prompt([
+    {
+      type: "confirm",
+      name: "confirm",
+      message: "你源码git提交了没有 没提交出问题风险自负！",
+      default: false,
+    },
+  ]);
+  if (!confirm) {
+    // 终止线程
+    process.exit(1);
+  }
 
   const targetDir = path.join(process.cwd(), dir);
   const localesGather: { [key: string]: "string" } = {};
