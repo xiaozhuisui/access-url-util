@@ -5,7 +5,8 @@ const fs = require("fs");
 const utils: { [key: string]: Function } = {};
 // 正则 连续的中文 数字 空格 不含 纯数字 空格
 // /[\u4E00-\u9FFF\u3000-\u303F]+(?:[\u4E00-\u9FFF\u3000-\u303F\d\s]*[\u4E00-\u9FFF\u3000-\u303F]+)*/;
-const TARGERT_ATTERN = /[\u4E00-\u9FFF\u3000-\u303F]+[\w\d\s]*/;
+// g开启全局匹配
+const TARGERT_ATTERN = /[\u4E00-\u9FFF\u3000-\u303F]+[\w\d\s]*/g;
 // 特殊情况
 const CROSS_ATTERN = /[\u4E00-\u9FFF]+(?:\s*\{\w+\}\s*)+/;
 // 匹配单行单标签 换行的不管
@@ -22,7 +23,6 @@ function handleMatchSingleTag(str: string):
     return false;
   }
   const matchs = str.match(TARGERT_ATTERN);
-  debugger;
   array.pop();
   return array.map((item, index) => {
     if ((item.indexOf("{{") || item.indexOf(":")) > item.indexOf("="))
@@ -98,7 +98,7 @@ utils.handI18n = function (
   // 用正则也是可以的 可惜我正则弱鸡
   pathList.pop();
   prefixKey = pathList.join(".") + ".";
-  const tagList = [];
+  const tagList: string[] = [];
   const startIndex = { value: 0 };
   // 目前只处理ts 和 tsx
   if (/\.(ts|tsx)$/.test(fileName)) {
@@ -111,6 +111,7 @@ utils.handI18n = function (
       }
       // 通过换行符处理 处理前后空格
       const strList = data.split("\n").map((item) => item.trim());
+      debugger;
       strList.forEach((str) => {
         debugger;
         // * /* 注释无需替换 tsx单行注释无需处理
@@ -120,14 +121,23 @@ utils.handI18n = function (
         }
         // 特殊情况暂不处理
         if (CROSS_ATTERN.test(str) || !TARGERT_ATTERN.test(str)) {
-          debugger;
+          console.log(CROSS_ATTERN.test(str));
+          console.log(!TARGERT_ATTERN.test(str));
+          // debugger;
+          if (str === "<>") {
+            tagList.push("root");
+          }
+          if (str === "</>") {
+            tagList.pop();
+          }
           return;
         }
+        // 用了全局标志 每次遍历都要重置一下
+        TARGERT_ATTERN.lastIndex = 0;
         // 单标签
         // 类似 <div title="标题" title1={"标题1"} title2={{title:"标题1"}}>
         // <div title3={{ title: '标题1', title1: '标题1', title2: '标题2' }} />
-
-        if (/<[^>]+\/>/.test(str) && handleMatchSingleTag(str)) {
+        if (/(<[^>]+\/>)|(<[^>]>)/.test(str) && handleMatchSingleTag(str)) {
           const result = handleMatchSingleTag(str);
           (
             result as {
@@ -146,7 +156,9 @@ utils.handI18n = function (
               );
               debugger;
             } else {
-              data = data.replace(
+              data = replacePos(
+                data,
+                startIndex,
                 `'${item.str}'`,
                 `utilsLocal(${JSON.stringify(prefixKey + item?.str)})`
               );
@@ -161,22 +173,29 @@ utils.handI18n = function (
         // 完整标签 可能含着中文
         if (/<[^>]+>/.test(str) && handleHalfTag(str, tagList)) {
           const result = handleMatchSingleTag(str);
+          debugger;
           (
             result as {
               type: "{{" | "=";
               str: string | undefined;
             }[]
           ).forEach((item) => {
+            // todo
+            debugger;
             if (item.type === "=") {
               // 需要加个花括号
-              data = data.replace(
-                `'${item}'`,
-                `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+              data = replacePos(
+                data,
+                startIndex,
+                `"${item.str}"`,
+                `{utilsLocal(${JSON.stringify(prefixKey + item.str)})}`
               );
             } else {
-              data = data.replace(
-                `'${item}'`,
-                `utilsLocal(${JSON.stringify(prefixKey + item)})`
+              data = replacePos(
+                data,
+                startIndex,
+                `'${item.str}'`,
+                `utilsLocal(${JSON.stringify(prefixKey + item.str)})`
               );
             }
           });
@@ -194,6 +213,12 @@ utils.handI18n = function (
             if (tagList.length) {
               data = data.replace(
                 `'${item}'`,
+                `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+              );
+              data = replacePos(
+                data,
+                startIndex,
+                `${item}`,
                 `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
               );
               debugger;
