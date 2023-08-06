@@ -3,7 +3,10 @@ const fs = require("fs");
 const path = require("path");
 const inquirer = require("inquirer");
 const { handI18n } = require("./utils");
-async function i18nUtil(dir: string, fileNameList?: string[]) {
+async function i18nUtil(
+  dir: string,
+  filesList?: { fileName: string; jsxStrList: string[] }[]
+) {
   // const { confirm } = await inquirer.prompt([
   //   {
   //     type: "confirm",
@@ -19,11 +22,12 @@ async function i18nUtil(dir: string, fileNameList?: string[]) {
 
   const targetDir = path.join(process.cwd(), dir);
   const localesGather: { [key: string]: "string" } = {};
-  if (fileNameList) {
-    fileNameList.forEach((fileName) => {
-      const currentDirName = path.join(targetDir, fileName);
-      handI18n(currentDirName);
+  if (filesList) {
+    filesList.forEach((fileObject) => {
+      const currentDirName = path.join(targetDir, fileObject.fileName);
+      handI18n(currentDirName, localesGather, fileObject.jsxStrList);
     });
+    return;
   }
   fs.readdirSync(targetDir).forEach(function (file: any) {
     var pathname = path.join(targetDir, file);

@@ -5,7 +5,8 @@ const utils: { [key: string]: Function } = {};
 // /[\u4E00-\u9FFF\u3000-\u303F]+(?:[\u4E00-\u9FFF\u3000-\u303F\d\s]*[\u4E00-\u9FFF\u3000-\u303F]+)*/;
 // g开启全局匹配
 // const TARGERT_ATTERN = /[\u4E00-\u9FFF\u3000-\u303F]+[\w\d\s]*/g;
-const TARGERT_ATTERN = /[\u4E00-\u9FFFa-zA-Z0-9]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9]*/g;
+const TARGERT_ATTERN =
+  /[\u4E00-\u9FFFa-zA-Z0-9]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9]*/g;
 // 完整标签的正则
 // <div>111</div>
 const FULFILL_ATTERN = /(?<=<[^>]+>)[^<]+(?=<\/[^>]+>)/g;
@@ -79,7 +80,8 @@ function replacePos(
 
 utils.handI18n = function (
   fileName: string,
-  localesGather: { [key: string]: "string" }
+  localesGather: { [key: string]: "string" },
+  jsxStrList: string[]
 ) {
   debugger;
   // 公共前缀key
@@ -123,7 +125,7 @@ utils.handI18n = function (
             if (str === "<>") {
               tagList.push("root");
             }
-            if (str === "</>") {
+            if (str === "</>" || str === "/>") {
               tagList.pop();
             }
             return;
@@ -310,10 +312,6 @@ utils.handI18n = function (
                     const matchs = str.match(TARGERT_ATTERN);
                     matchs?.forEach((item) => {
                       if (tagList.length) {
-                        data = data.replace(
-                          `'${item}'`,
-                          `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
-                        );
                         data = replacePos(
                           data,
                           startIndex,
@@ -376,14 +374,9 @@ utils.handI18n = function (
           // 最难的已经过去了 轻舟已过万重山 真j8难 睡觉
           if (TARGERT_ATTERN.test(str)) {
             const matchs = str.match(TARGERT_ATTERN);
-            debugger
+            debugger;
             matchs?.forEach((item) => {
-              debugger
               if (tagList.length) {
-                data = data.replace(
-                  `'${item}'`,
-                  `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
-                );
                 data = replacePos(
                   data,
                   startIndex,
@@ -391,14 +384,31 @@ utils.handI18n = function (
                   `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
                 );
               } else {
-                debugger
+                if (jsxStrList) {
+                  const findIndex = jsxStrList.findIndex(
+                    (jItem) => jItem === item
+                  );
+                  debugger;
+                  if (findIndex !== -1) {
+                    jsxStrList = jsxStrList.filter(
+                      (_fItem, index) => index !== findIndex
+                    );
+                    // 说明有戏
+                    data = replacePos(
+                      data,
+                      startIndex,
+                      `${item}`,
+                      `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                    );
+                    return;
+                  }
+                }
                 data = replacePos(
                   data,
                   startIndex,
                   `'${item}'`,
                   `utilsLocal(${JSON.stringify(prefixKey + item)})`
                 );
-                debugger
               }
             });
           }
