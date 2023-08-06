@@ -1,12 +1,14 @@
-import { indexOf } from "lodash";
-
 // @ts-ignore
 const fs = require("fs");
 const utils: { [key: string]: Function } = {};
 // 正则 连续的中文 数字 空格 不含 纯数字 空格
 // /[\u4E00-\u9FFF\u3000-\u303F]+(?:[\u4E00-\u9FFF\u3000-\u303F\d\s]*[\u4E00-\u9FFF\u3000-\u303F]+)*/;
 // g开启全局匹配
-const TARGERT_ATTERN = /[\u4E00-\u9FFF\u3000-\u303F]+[\w\d\s]*/g;
+// const TARGERT_ATTERN = /[\u4E00-\u9FFF\u3000-\u303F]+[\w\d\s]*/g;
+const TARGERT_ATTERN = /[\u4E00-\u9FFFa-zA-Z0-9]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9]*/g;
+// 完整标签的正则
+// <div>111</div>
+const FULFILL_ATTERN = /(?<=<[^>]+>)[^<]+(?=<\/[^>]+>)/g;
 // 特殊情况
 const CROSS_ATTERN = /[\u4E00-\u9FFF]+(?:\s*\{\w+\}\s*)+/;
 // 匹配单行单标签 换行的不管
@@ -72,7 +74,6 @@ function replacePos(
     text.substring(0, start.value) +
     text.substring(start.value).replace(content, replacetext);
   start.value = Math.max(mystr.indexOf(replacetext, start.value), start.value);
-  debugger;
   return mystr;
 }
 
@@ -80,7 +81,7 @@ utils.handI18n = function (
   fileName: string,
   localesGather: { [key: string]: "string" }
 ) {
-  console.log(fileName);
+  debugger;
   // 公共前缀key
   let prefixKey = "";
   let pathList: string[] = [];
@@ -111,131 +112,302 @@ utils.handI18n = function (
       }
       // 通过换行符处理 处理前后空格
       const strList = data.split("\n").map((item) => item.trim());
-      debugger;
-      strList.forEach((str) => {
-        debugger;
-        // * /* 注释无需替换 tsx单行注释无需处理
-        if (/^(\/\*|\*|\/\/)|{\/\*.*?\*\/}/.test(str)) {
-          debugger;
-          return;
-        }
-        // 特殊情况暂不处理
-        if (CROSS_ATTERN.test(str) || !TARGERT_ATTERN.test(str)) {
-          console.log(CROSS_ATTERN.test(str));
-          console.log(!TARGERT_ATTERN.test(str));
-          // debugger;
-          if (str === "<>") {
-            tagList.push("root");
+      try {
+        strList.forEach((str) => {
+          // * /* 注释无需替换 tsx单行注释无需处理
+          if (/^(\/\*|\*|\/\/)|{\/\*.*?\*\/}/.test(str)) {
+            return;
           }
-          if (str === "</>") {
-            tagList.pop();
+          // 特殊情况暂不处理
+          if (CROSS_ATTERN.test(str) || !TARGERT_ATTERN.test(str)) {
+            if (str === "<>") {
+              tagList.push("root");
+            }
+            if (str === "</>") {
+              tagList.pop();
+            }
+            return;
           }
-          return;
-        }
-        // 用了全局标志 每次遍历都要重置一下
-        TARGERT_ATTERN.lastIndex = 0;
-        // 单标签
-        // 类似 <div title="标题" title1={"标题1"} title2={{title:"标题1"}}>
-        // <div title3={{ title: '标题1', title1: '标题1', title2: '标题2' }} />
-        if (/(<[^>]+\/>)|(<[^>]>)/.test(str) && handleMatchSingleTag(str)) {
-          const result = handleMatchSingleTag(str);
-          (
-            result as {
-              type: "{{" | "=";
-              str: string | undefined;
-            }[]
-          ).forEach((item) => {
-            if (item.type === "=") {
-              // 需要加个花括号
-              debugger;
-              data = replacePos(
-                data,
-                startIndex,
-                `"${item.str}"`,
-                `{utilsLocal(${JSON.stringify(prefixKey + item?.str)})}`
+          // 用了全局标志 每次遍历都要重置一下
+          TARGERT_ATTERN.lastIndex = 0;
+          // 单标签
+          // 类似 <div title="标题" title1={"标题1"} title2={{title:"标题1"}}>
+          // <div title3={{ title: '标题1', title1: '标题1', title2: '标题2' }} />
+          if (/<[^>]+\/>/.test(str) && handleMatchSingleTag(str)) {
+            const result = handleMatchSingleTag(str);
+            (
+              result as {
+                type: "{{" | "=";
+                str: string | undefined;
+              }[]
+            ).forEach((item) => {
+              if (item.type === "=") {
+                // 需要加个花括号
+                data = replacePos(
+                  data,
+                  startIndex,
+                  `"${item.str}"`,
+                  `{utilsLocal(${JSON.stringify(prefixKey + item?.str)})}`
+                );
+              } else {
+                data = replacePos(
+                  data,
+                  startIndex,
+                  `'${item.str}'`,
+                  `utilsLocal(${JSON.stringify(prefixKey + item?.str)})`
+                );
+              }
+            });
+            return;
+          }
+          // <div title="标题1"> 中文... </div>
+          // 完整标签 可能含着中文 要做前后处理
+          let fullTagContent: string | undefined = "";
+          if (str.match(FULFILL_ATTERN)?.[0]) {
+            fullTagContent = str.match(FULFILL_ATTERN)?.[0].trim();
+            const fullTagContentStar = str.indexOf(fullTagContent as string);
+            // 恶心的来了
+            if (str.substring(0, fullTagContentStar)) {
+              const result = handleMatchSingleTag(
+                str.substring(0, fullTagContentStar)
               );
-              debugger;
-            } else {
-              data = replacePos(
-                data,
-                startIndex,
-                `'${item.str}'`,
-                `utilsLocal(${JSON.stringify(prefixKey + item?.str)})`
-              );
+              if (result) {
+                strList.forEach((str) => {
+                  // * /* 注释无需替换 tsx单行注释无需处理
+                  if (/^(\/\*|\*|\/\/)|{\/\*.*?\*\/}/.test(str)) {
+                    return;
+                  }
+                  // 特殊情况暂不处理
+                  if (CROSS_ATTERN.test(str) || !TARGERT_ATTERN.test(str)) {
+                    if (str === "<>") {
+                      tagList.push("root");
+                    }
+                    if (str === "</>") {
+                      tagList.pop();
+                    }
+                    return;
+                  }
+                  // 用了全局标志 每次遍历都要重置一下
+                  TARGERT_ATTERN.lastIndex = 0;
+                  // 单标签
+                  // 类似 <div title="标题" title1={"标题1"} title2={{title:"标题1"}}>
+                  // <div title3={{ title: '标题1', title1: '标题1', title2: '标题2' }} />
+                  if (/<[^>]+\/>/.test(str) && handleMatchSingleTag(str)) {
+                    const result = handleMatchSingleTag(str);
+                    (
+                      result as {
+                        type: "{{" | "=";
+                        str: string | undefined;
+                      }[]
+                    ).forEach((item) => {
+                      if (item.type === "=") {
+                        // 需要加个花括号
+                        data = replacePos(
+                          data,
+                          startIndex,
+                          `"${item.str}"`,
+                          `{utilsLocal(${JSON.stringify(
+                            prefixKey + item?.str
+                          )})}`
+                        );
+                      } else {
+                        data = replacePos(
+                          data,
+                          startIndex,
+                          `'${item.str}'`,
+                          `utilsLocal(${JSON.stringify(prefixKey + item?.str)})`
+                        );
+                      }
+                    });
+                    return;
+                  }
+                  // <div title="标题1"> 中文... </div>
+                  // 完整标签 可能含着中文 要做前后处理
+                  let fullTagContent: string | undefined = "";
+                  if (str.match(FULFILL_ATTERN)?.[0]) {
+                    fullTagContent = str.match(FULFILL_ATTERN)?.[0].trim();
+                    const fullTagContentStar = str.indexOf(
+                      fullTagContent as string
+                    );
+                    // 恶心的来了
+                    if (str.substring(0, fullTagContentStar)) {
+                      const result = handleMatchSingleTag(
+                        str.substring(0, fullTagContentStar)
+                      );
+                      (
+                        result as {
+                          type: "{{" | "=";
+                          str: string | undefined;
+                        }[]
+                      ).forEach((item) => {
+                        if (item.type === "=") {
+                          // 需要加个花括号
+                          data = replacePos(
+                            data,
+                            startIndex,
+                            `"${item.str}"`,
+                            `{utilsLocal(${JSON.stringify(
+                              prefixKey + item.str
+                            )})}`
+                          );
+                        } else {
+                          data = replacePos(
+                            data,
+                            startIndex,
+                            `'${item.str}'`,
+                            `utilsLocal(${JSON.stringify(
+                              prefixKey + item.str
+                            )})`
+                          );
+                        }
+                      });
+                    }
+                    data = replacePos(
+                      data,
+                      startIndex,
+                      `${fullTagContent}`,
+                      `{utilsLocal(${JSON.stringify(
+                        prefixKey + fullTagContent
+                      )})}`
+                    );
+                    return;
+                  }
+
+                  // 如果是单行标签 不用管是不是完整的 先加个
+                  // <div>12345中</div> 与这种作区分
+                  if (/<[^>]+>/.test(str) && handleHalfTag(str, tagList)) {
+                    const result = handleMatchSingleTag(str);
+                    (
+                      result as {
+                        type: "{{" | "=";
+                        str: string | undefined;
+                      }[]
+                    ).forEach((item) => {
+                      if (item.type === "=") {
+                        // 需要加个花括号
+                        data = replacePos(
+                          data,
+                          startIndex,
+                          `"${item}"`,
+                          `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                        );
+                      } else {
+                        data = replacePos(
+                          data,
+                          startIndex,
+                          `'${item}'`,
+                          `utilsLocal(${JSON.stringify(prefixKey + item)})`
+                        );
+                      }
+                    });
+                    return;
+                  }
+                  if (/<\/\w+>/.test(str)) {
+                    return tagList.pop();
+                  }
+                  // 最难的已经过去了 轻舟已过万重山 真j8难 睡觉
+                  if (TARGERT_ATTERN.test(str)) {
+                    const matchs = str.match(TARGERT_ATTERN);
+                    matchs?.forEach((item) => {
+                      if (tagList.length) {
+                        data = data.replace(
+                          `'${item}'`,
+                          `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                        );
+                        data = replacePos(
+                          data,
+                          startIndex,
+                          `${item}`,
+                          `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                        );
+                      } else {
+                        data = data.replace(
+                          `'${item}'`,
+                          `utilsLocal(${JSON.stringify(prefixKey + item)})`
+                        );
+                      }
+                    });
+                  }
+                });
+              }
             }
-          });
-          debugger;
-          return;
-        }
-        // 如果是单行标签 不用管是不是完整的 先加个
-        // <div>12345中</div> 与这种作区分
-        // <div title="标题1"> | <div>
-        // 完整标签 可能含着中文
-        if (/<[^>]+>/.test(str) && handleHalfTag(str, tagList)) {
-          const result = handleMatchSingleTag(str);
-          debugger;
-          (
-            result as {
-              type: "{{" | "=";
-              str: string | undefined;
-            }[]
-          ).forEach((item) => {
-            // todo
-            debugger;
-            if (item.type === "=") {
-              // 需要加个花括号
-              data = replacePos(
-                data,
-                startIndex,
-                `"${item.str}"`,
-                `{utilsLocal(${JSON.stringify(prefixKey + item.str)})}`
-              );
-            } else {
-              data = replacePos(
-                data,
-                startIndex,
-                `'${item.str}'`,
-                `utilsLocal(${JSON.stringify(prefixKey + item.str)})`
-              );
-            }
-          });
-          debugger;
-          return;
-        }
-        if (/<\/\w+>/.test(str)) {
-          debugger;
-          return tagList.pop();
-        }
-        // 最难的已经过去了 轻舟已过万重山 真j8难 睡觉
-        if (TARGERT_ATTERN.test(str)) {
-          const matchs = str.match(TARGERT_ATTERN);
-          matchs?.forEach((item) => {
-            if (tagList.length) {
-              data = data.replace(
-                `'${item}'`,
-                `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
-              );
-              data = replacePos(
-                data,
-                startIndex,
-                `${item}`,
-                `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
-              );
-              debugger;
-            } else {
-              data = data.replace(
-                `'${item}'`,
-                `utilsLocal(${JSON.stringify(prefixKey + item)})`
-              );
-              debugger;
-            }
-          });
-          debugger;
-        }
+            // todo 再处理 fullTagContent 这样写肯定有问题
+            data = replacePos(
+              data,
+              startIndex,
+              `${fullTagContent}`,
+              `{utilsLocal(${JSON.stringify(prefixKey + fullTagContent)})}`
+            );
+            return;
+          }
+
+          // 如果是单行标签 不用管是不是完整的 先加个
+          // <div>12345中</div> 与这种作区分
+          if (/<[^>]+>/.test(str) && handleHalfTag(str, tagList)) {
+            const result = handleMatchSingleTag(str);
+            (
+              result as {
+                type: "{{" | "=";
+                str: string | undefined;
+              }[]
+            ).forEach((item) => {
+              if (item.type === "=") {
+                // 需要加个花括号
+                data = replacePos(
+                  data,
+                  startIndex,
+                  `"${item}"`,
+                  `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                );
+              } else {
+                data = replacePos(
+                  data,
+                  startIndex,
+                  `'${item}'`,
+                  `utilsLocal(${JSON.stringify(prefixKey + item)})`
+                );
+              }
+            });
+            return;
+          }
+          if (/<\/\w+>/.test(str)) {
+            return tagList.pop();
+          }
+          // 最难的已经过去了 轻舟已过万重山 真j8难 睡觉
+          if (TARGERT_ATTERN.test(str)) {
+            const matchs = str.match(TARGERT_ATTERN);
+            debugger
+            matchs?.forEach((item) => {
+              debugger
+              if (tagList.length) {
+                data = data.replace(
+                  `'${item}'`,
+                  `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                );
+                data = replacePos(
+                  data,
+                  startIndex,
+                  `${item}`,
+                  `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                );
+              } else {
+                debugger
+                data = replacePos(
+                  data,
+                  startIndex,
+                  `'${item}'`,
+                  `utilsLocal(${JSON.stringify(prefixKey + item)})`
+                );
+                debugger
+              }
+            });
+          }
+          // 不可能完美匹配 加个扩展
+        });
+      } catch (error) {
         debugger;
-      });
+      }
       // {/*} 进行特殊处理
-      console.log(data);
       fs.writeFile(fileName, data, "utf8", (err) => {
         if (err) {
           console.error("写入文件时出错:", err);
