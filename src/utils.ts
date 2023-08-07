@@ -110,7 +110,7 @@ utils.handI18n = function (
   if (/\.(ts|tsx)$/.test(fileName)) {
     try {
       let data: string =
-        "import { i18nLocal, utilsLocal } from '@/utils/utils';\n " +
+        "import { utilsLocal } from '@/utils/utils';\n " +
         fs.readFileSync(fileName, "utf8");
       if (!TARGERT_ATTERN.test(data)) {
         return;
