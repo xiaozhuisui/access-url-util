@@ -3,7 +3,7 @@ const fs = require("fs");
 // @ts-ignore
 const path = require("path");
 const inquirer = require("inquirer");
-const { handI18n,createLocalesGather } = require("./utils");
+const { handI18n,createLocalesGather,travel } = require("./utils");
 async function i18nUtil(
   dir: string,
   filesList?: { fileName: string; jsxStrList: string[] }[]
@@ -36,9 +36,8 @@ async function i18nUtil(
     var pathname = path.join(targetDir, file);
     // 如果是目录 就不处理
     if (fs.statSync(pathname).isDirectory()) {
-      return;
+      travel(pathname,handI18n,localesGather)
     } else {
-      debugger
       handI18n(pathname, localesGather);
     }
   });

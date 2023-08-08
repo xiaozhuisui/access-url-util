@@ -480,4 +480,20 @@ utils.createLocalesGather = function (
   );
 };
 
+utils.travel = function (
+  dir: string,
+  handI18n: any,
+  localesGather: { [key: string]: string }
+) {
+  fs.readdirSync(dir).forEach(function (file) {
+    var pathname = path.join(dir, file);
+
+    if (fs.statSync(pathname).isDirectory()) {
+      utils.travel(pathname, handI18n, localesGather);
+    } else {
+      handI18n(pathname, localesGather);
+    }
+  });
+};
+
 module.exports = utils;
