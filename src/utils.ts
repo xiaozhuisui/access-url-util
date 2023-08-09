@@ -109,7 +109,7 @@ utils.handI18n = function (
   if (/\.(ts|tsx)$/.test(fileName)) {
     try {
       let data: string =
-        "import { utilsLocal } from '@/utils/utils';\n " +
+        "import { i18nLocal } from '@/utils/utils';\n " +
         fs.readFileSync(fileName, "utf8");
       if (!TARGERT_ATTERN.test(data)) {
         return;
@@ -152,14 +152,14 @@ utils.handI18n = function (
                   data,
                   startIndex,
                   `"${item.str}"`,
-                  `{utilsLocal(${JSON.stringify(prefixKey + item?.str)})}`
+                  `{i18nLocal(${JSON.stringify(prefixKey + item?.str)})}`
                 );
               } else {
                 data = replacePos(
                   data,
                   startIndex,
                   `'${item.str}'`,
-                  `utilsLocal(${JSON.stringify(prefixKey + item?.str)})`
+                  `i18nLocal(${JSON.stringify(prefixKey + item?.str)})`
                 );
               }
               localesGather[prefixKey + item?.str] = item.str as string;
@@ -212,7 +212,7 @@ utils.handI18n = function (
                           data,
                           startIndex,
                           `"${item.str}"`,
-                          `{utilsLocal(${JSON.stringify(
+                          `{i18nLocal(${JSON.stringify(
                             prefixKey + item?.str
                           )})}`
                         );
@@ -221,7 +221,7 @@ utils.handI18n = function (
                           data,
                           startIndex,
                           `'${item.str}'`,
-                          `utilsLocal(${JSON.stringify(prefixKey + item?.str)})`
+                          `i18nLocal(${JSON.stringify(prefixKey + item?.str)})`
                         );
                         localesGather[prefixKey + item?.str] =
                           item.str as string;
@@ -254,7 +254,7 @@ utils.handI18n = function (
                             data,
                             startIndex,
                             `"${item.str}"`,
-                            `{utilsLocal(${JSON.stringify(
+                            `{i18nLocal(${JSON.stringify(
                               prefixKey + item.str
                             )})}`
                           );
@@ -263,7 +263,7 @@ utils.handI18n = function (
                             data,
                             startIndex,
                             `'${item.str}'`,
-                            `utilsLocal(${JSON.stringify(
+                            `i18nLocal(${JSON.stringify(
                               prefixKey + item.str
                             )})`
                           );
@@ -277,7 +277,7 @@ utils.handI18n = function (
                       data,
                       startIndex,
                       `${fullTagContent}`,
-                      `{utilsLocal(${JSON.stringify(
+                      `{i18nLocal(${JSON.stringify(
                         prefixKey + fullTagContent
                       )})}`
                     );
@@ -305,7 +305,7 @@ utils.handI18n = function (
                           data,
                           startIndex,
                           `"${item}"`,
-                          `{utilsLocal(${JSON.stringify(
+                          `{i18nLocal(${JSON.stringify(
                             prefixKey + item.str
                           )})}`
                         );
@@ -314,7 +314,7 @@ utils.handI18n = function (
                           data,
                           startIndex,
                           `'${item}'`,
-                          `utilsLocal(${JSON.stringify(prefixKey + item.str)})`
+                          `i18nLocal(${JSON.stringify(prefixKey + item.str)})`
                         );
                       }
                       localesGather[prefixKey + item.str] = item.str as string;
@@ -333,14 +333,14 @@ utils.handI18n = function (
                           data,
                           startIndex,
                           `${item}`,
-                          `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                          `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
                         );
                         localesGather[prefixKey + item] = item;
                       } else {
                         // todo
                         // data = data.replace(
                         //   `'${item}'`,
-                        //   `utilsLocal(${JSON.stringify(prefixKey + item)})`
+                        //   `i18nLocal(${JSON.stringify(prefixKey + item)})`
                         // );
                       }
                     });
@@ -353,7 +353,7 @@ utils.handI18n = function (
               data,
               startIndex,
               `${fullTagContent}`,
-              `{utilsLocal(${JSON.stringify(prefixKey + fullTagContent)})}`
+              `{i18nLocal(${JSON.stringify(prefixKey + fullTagContent)})}`
             );
             localesGather[prefixKey + fullTagContent] =
               fullTagContent as string;
@@ -377,14 +377,14 @@ utils.handI18n = function (
                   data,
                   startIndex,
                   `"${item.str}"`,
-                  `{utilsLocal(${JSON.stringify(prefixKey + item.str)})}`
+                  `{i18nLocal(${JSON.stringify(prefixKey + item.str)})}`
                 );
               } else {
                 data = replacePos(
                   data,
                   startIndex,
                   `'${item.str}'`,
-                  `utilsLocal(${JSON.stringify(prefixKey + item.str)})`
+                  `i18nLocal(${JSON.stringify(prefixKey + item.str)})`
                 );
                 localesGather[prefixKey + (item.str || "")] = item.str || "";
               }
@@ -403,7 +403,7 @@ utils.handI18n = function (
                   data,
                   startIndex,
                   `${item}`,
-                  `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                  `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
                 );
                 localesGather[prefixKey + item] = item;
               } else {
@@ -420,7 +420,7 @@ utils.handI18n = function (
                       data,
                       startIndex,
                       `${item}`,
-                      `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
+                      `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
                     );
                     localesGather[prefixKey + item] = item;
                     return;
@@ -430,7 +430,7 @@ utils.handI18n = function (
                   data,
                   startIndex,
                   `'${item}'`,
-                  `utilsLocal(${JSON.stringify(prefixKey + item)})`
+                  `i18nLocal(${JSON.stringify(prefixKey + item)})`
                 );
                 localesGather[prefixKey + item] = item;
               }
