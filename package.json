@@ -1,6 +1,6 @@
 {
   "name": "bs-i18n-access-utils",
-  "version": "0.0.4",
+  "version": "0.0.5",
   "description": "比升生成页面权限点以及i18n工具",
   "main": "lib/index.js",
   "scripts": {
@@ -9,6 +9,7 @@
     "build": "webpack"
   },
   "devDependencies": {
+    "@types/node": "^20.4.8",
     "inquirer": "^8.2.0",
     "node-polyfill-webpack-plugin": "^2.0.1",
     "ts-loader": "^9.4.4",

@@ -8,7 +8,8 @@
     "moduleResolution": "node",
     "strict": true,
     "declaration": true,
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "baseUrl": "."
   },
   "include": ["src"]
 }

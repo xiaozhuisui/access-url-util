@@ -1,6 +1,4 @@
-// @ts-ignore
 const fs = require("fs");
-// @ts-ignore
 const path = require("path");
 const utils: { [key: string]: Function } = {};
 // 正则 连续的中文 数字 空格 不含 纯数字 空格
@@ -94,6 +92,7 @@ utils.handI18n = function (
     pathList = fileName
       .substring(fileName.indexOf("pages"))
       .replaceAll("/", ".")
+      .replaceAll("\\", ".")
       .split(".");
   } else if (fileName.includes("components")) {
     pathList = fileName
@@ -424,7 +423,6 @@ utils.handI18n = function (
                       `{utilsLocal(${JSON.stringify(prefixKey + item)})}`
                     );
                     localesGather[prefixKey + item] = item;
-                    // debugger;
                     return;
                   }
                 }
@@ -465,7 +463,6 @@ utils.createLocalesGather = function (
   },
   targetDir: string
 ) {
-  debugger;
   fs.writeFile(
     path.join(targetDir, "/locales.json"),
     JSON.stringify(localesGather),
@@ -487,7 +484,6 @@ utils.travel = function (
 ) {
   fs.readdirSync(dir).forEach(function (file) {
     var pathname = path.join(dir, file);
-
     if (fs.statSync(pathname).isDirectory()) {
       utils.travel(pathname, handI18n, localesGather);
     } else {

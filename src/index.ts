@@ -1,7 +1,6 @@
-// @ts-ignore
 const fs = require("fs");
-// @ts-ignore
-const path = require("path");
+
+import * as path from 'path'
 const inquirer = require("inquirer");
 const { handI18n,createLocalesGather,travel } = require("./utils");
 async function i18nUtil(
@@ -47,3 +46,5 @@ async function i18nUtil(
 }
 
 module.exports = { i18nUtil };
+
+
