@@ -120,7 +120,7 @@ utils.handI18n = function (
       try {
         strList.forEach((str) => {
           // * /* 注释无需替换 tsx单行注释无需处理
-          if (/^(\/\*|\*|\/\/)|{\/\*.*?\*\/}/.test(str)) {
+          if (/^(\/\*|\*|\/\/)|{\/\*.*?\*\/}/.test(str)||str.includes("i18nLocal")||str.includes("utilsLocal")) {
             return;
           }
           // 特殊情况暂不处理
