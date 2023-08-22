@@ -1,3 +1,5 @@
+import { replace } from "lodash";
+
 const fs = require("fs");
 const path = require("path");
 const utils: { [key: string]: Function } = {};
@@ -77,8 +79,7 @@ function replacePos(
   const mystr =
     text.substring(0, start.value) +
     text.substring(start.value).replace(content, replacetext);
-  start.value =
-    Math.max(mystr.indexOf(replacetext, start.value), start.value)
+  start.value = Math.max(mystr.indexOf(replacetext, start.value), start.value);
   return mystr;
 }
 
@@ -120,7 +121,7 @@ utils.handI18n = function (
       const strList = data.split("\n").map((item) => item.trim());
 
       try {
-        strList.forEach((str) => {
+        strList.forEach((str: string, strIndex: number) => {
           // * /* 注释无需替换 tsx单行注释无需处理
           if (
             /^(\/\*|\*|\/\/)|{\/\*.*?\*\/}/.test(str) ||
@@ -155,18 +156,26 @@ utils.handI18n = function (
             ).forEach((item) => {
               if (item.type === "=") {
                 // 需要加个花括号
-                data = replacePos(
-                  data,
-                  startIndex,
+                // data = replacePos(
+                //   data,
+                //   startIndex,
+                //   `"${item.str}"`,
+                //   `{i18nLocal(${JSON.stringify(prefixKey + item?.str)})}`
+                // );
+                strList[strIndex] = strList[strIndex].replace(
                   `"${item.str}"`,
                   `{i18nLocal(${JSON.stringify(prefixKey + item?.str)})}`
                 );
               } else {
-                data = replacePos(
-                  data,
-                  startIndex,
-                  `'${item.str}'`,
-                  `i18nLocal(${JSON.stringify(prefixKey + item?.str)})`
+                // data = replacePos(
+                //   data,
+                //   startIndex,
+                //   `'${item.str}'`,
+                //   `i18nLocal(${JSON.stringify(prefixKey + item?.str)})`
+                // );
+                strList[strIndex] = strList[strIndex].replace(
+                  `"${item.str}"`,
+                  `{i18nLocal(${JSON.stringify(prefixKey + item?.str)})}`
                 );
               }
               localesGather[prefixKey + item?.str] = item.str as string;
@@ -215,18 +224,28 @@ utils.handI18n = function (
                     ).forEach((item) => {
                       if (item.type === "=") {
                         // 需要加个花括号
-                        data = replacePos(
-                          data,
-                          startIndex,
+                        // data = replacePos(
+                        //   data,
+                        //   startIndex,
+                        //   `"${item.str}"`,
+                        //   `{i18nLocal(${JSON.stringify(
+                        //     prefixKey + item?.str
+                        //   )})}`
+                        // );
+                        strList[strIndex] = strList[strIndex].replace(
                           `"${item.str}"`,
                           `{i18nLocal(${JSON.stringify(
                             prefixKey + item?.str
                           )})}`
                         );
                       } else {
-                        data = replacePos(
-                          data,
-                          startIndex,
+                        // data = replacePos(
+                        //   data,
+                        //   startIndex,
+                        //   `'${item.str}'`,
+                        //   `i18nLocal(${JSON.stringify(prefixKey + item?.str)})`
+                        // );
+                        strList[strIndex] = strList[strIndex].replace(
                           `'${item.str}'`,
                           `i18nLocal(${JSON.stringify(prefixKey + item?.str)})`
                         );
@@ -257,20 +276,32 @@ utils.handI18n = function (
                       ).forEach((item) => {
                         if (item.type === "=") {
                           // 需要加个花括号
-                          data = replacePos(
-                            data,
-                            startIndex,
+                          // data = replacePos(
+                          //   data,
+                          //   startIndex,
+                          //   `"${item.str}"`,
+                          //   `{i18nLocal(${JSON.stringify(
+                          //     prefixKey + item.str
+                          //   )})}`
+                          // );
+                          strList[strIndex] = strList[strIndex].replace(
                             `"${item.str}"`,
                             `{i18nLocal(${JSON.stringify(
                               prefixKey + item.str
                             )})}`
                           );
                         } else {
-                          data = replacePos(
-                            data,
-                            startIndex,
-                            `'${item.str}'`,
-                            `i18nLocal(${JSON.stringify(prefixKey + item.str)})`
+                          // data = replacePos(
+                          //   data,
+                          //   startIndex,
+                          //   `'${item.str}'`,
+                          //   `i18nLocal(${JSON.stringify(prefixKey + item.str)})`
+                          // );
+                          strList[strIndex] = strList[strIndex].replace(
+                            `"${item.str}"`,
+                            `{i18nLocal(${JSON.stringify(
+                              prefixKey + item.str
+                            )})}`
                           );
                         }
                         localesGather[prefixKey + item.str] =
@@ -278,10 +309,16 @@ utils.handI18n = function (
                       });
                     }
                     // 标准括号里面的内容
-                    data = replacePos(
-                      data,
-                      startIndex,
-                      `${fullTagContent}`,
+                    // data = replacePos(
+                    //   data,
+                    //   startIndex,
+                    //   `${fullTagContent}`,
+                    //   `{i18nLocal(${JSON.stringify(
+                    //     prefixKey + fullTagContent
+                    //   )})}`
+                    // );
+                    strList[strIndex] = strList[strIndex].replace(
+                      `"${fullTagContent}"`,
                       `{i18nLocal(${JSON.stringify(
                         prefixKey + fullTagContent
                       )})}`
@@ -306,16 +343,24 @@ utils.handI18n = function (
                       if (item.type === "=") {
                         // todo
                         // 需要加个花括号
-                        data = replacePos(
-                          data,
-                          startIndex,
+                        // data = replacePos(
+                        //   data,
+                        //   startIndex,
+                        //   `"${item}"`,
+                        //   `{i18nLocal(${JSON.stringify(prefixKey + item.str)})}`
+                        // );
+                        strList[strIndex] = strList[strIndex].replace(
                           `"${item}"`,
                           `{i18nLocal(${JSON.stringify(prefixKey + item.str)})}`
                         );
                       } else {
-                        data = replacePos(
-                          data,
-                          startIndex,
+                        // data = replacePos(
+                        //   data,
+                        //   startIndex,
+                        //   `'${item}'`,
+                        //   `i18nLocal(${JSON.stringify(prefixKey + item.str)})`
+                        // );
+                        strList[strIndex] = strList[strIndex].replace(
                           `'${item}'`,
                           `i18nLocal(${JSON.stringify(prefixKey + item.str)})`
                         );
@@ -332,9 +377,13 @@ utils.handI18n = function (
                     const matchs = str.match(TARGERT_ATTERN);
                     matchs?.forEach((item) => {
                       if (tagList.length) {
-                        data = replacePos(
-                          data,
-                          startIndex,
+                        // data = replacePos(
+                        //   data,
+                        //   startIndex,
+                        //   `${item}`,
+                        //   `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
+                        // );
+                        strList[strIndex] = strList[strIndex].replace(
                           `${item}`,
                           `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
                         );
@@ -352,9 +401,13 @@ utils.handI18n = function (
               }
             }
             // todo 再处理 fullTagContent 这样写肯定有问题
-            data = replacePos(
-              data,
-              startIndex,
+            // data = replacePos(
+            //   data,
+            //   startIndex,
+            //   `${fullTagContent}`,
+            //   `{i18nLocal(${JSON.stringify(prefixKey + fullTagContent)})}`
+            // );
+            strList[strIndex] = strList[strIndex].replace(
               `${fullTagContent}`,
               `{i18nLocal(${JSON.stringify(prefixKey + fullTagContent)})}`
             );
@@ -376,16 +429,24 @@ utils.handI18n = function (
               // todo
               if (item.type === "=") {
                 // 需要加个花括号
-                data = replacePos(
-                  data,
-                  startIndex,
+                // data = replacePos(
+                //   data,
+                //   startIndex,
+                //   `"${item.str}"`,
+                //   `{i18nLocal(${JSON.stringify(prefixKey + item.str)})}`
+                // );
+                strList[strIndex] = strList[strIndex].replace(
                   `"${item.str}"`,
                   `{i18nLocal(${JSON.stringify(prefixKey + item.str)})}`
                 );
               } else {
-                data = replacePos(
-                  data,
-                  startIndex,
+                // data = replacePos(
+                //   data,
+                //   startIndex,
+                //   `'${item.str}'`,
+                //   `i18nLocal(${JSON.stringify(prefixKey + item.str)})`
+                // );
+                strList[strIndex] = strList[strIndex].replace(
                   `'${item.str}'`,
                   `i18nLocal(${JSON.stringify(prefixKey + item.str)})`
                 );
@@ -402,9 +463,13 @@ utils.handI18n = function (
             const matchs = str.match(TARGERT_ATTERN);
             matchs?.forEach((item) => {
               if (tagList.length) {
-                data = replacePos(
-                  data,
-                  startIndex,
+                // data = replacePos(
+                //   data,
+                //   startIndex,
+                //   `${item}`,
+                //   `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
+                // );
+                strList[strIndex] = strList[strIndex].replace(
                   `${item}`,
                   `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
                 );
@@ -419,9 +484,13 @@ utils.handI18n = function (
                       (_fItem, index) => index !== findIndex
                     );
                     // 说明有戏
-                    data = replacePos(
-                      data,
-                      startIndex,
+                    // data = replacePos(
+                    //   data,
+                    //   startIndex,
+                    //   `${item}`,
+                    //   `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
+                    // );
+                    strList[strIndex] = strList[strIndex].replace(
                       `${item}`,
                       `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
                     );
@@ -429,11 +498,15 @@ utils.handI18n = function (
                     return;
                   }
                 }
-                data = replacePos(
-                  data,
-                  startIndex,
-                  `'${item}'`,
-                  `i18nLocal(${JSON.stringify(prefixKey + item)})`
+                // data = replacePos(
+                //   data,
+                //   startIndex,
+                //   `'${item}'`,
+                //   `i18nLocal(${JSON.stringify(prefixKey + item)})`
+                // );
+                strList[strIndex] = strList[strIndex].replace(
+                  `${item}`,
+                  `{i18nLocal(${JSON.stringify(prefixKey + item)})}`
                 );
                 localesGather[prefixKey + item] = item;
               }
@@ -445,7 +518,7 @@ utils.handI18n = function (
         console.log(error);
       }
       // {/*} 进行特殊处理
-      fs.writeFile(fileName, data, "utf8", (err) => {
+      fs.writeFile(fileName, strList.join('\n'), "utf8", (err) => {
         if (err) {
           console.error("写入文件时出错:", err);
           return;
