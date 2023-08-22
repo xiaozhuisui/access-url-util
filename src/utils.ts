@@ -66,6 +66,7 @@ function handleHalfTag(str: string, tagList: string[]) {
     }
   });
 }
+
 // 从指定位置开始匹配
 function replacePos(
   text: string,
@@ -76,7 +77,8 @@ function replacePos(
   const mystr =
     text.substring(0, start.value) +
     text.substring(start.value).replace(content, replacetext);
-  start.value = Math.max(mystr.indexOf(replacetext, start.value), start.value);
+  start.value =
+    Math.max(mystr.indexOf(replacetext, start.value), start.value)
   return mystr;
 }
 
@@ -120,7 +122,12 @@ utils.handI18n = function (
       try {
         strList.forEach((str) => {
           // * /* 注释无需替换 tsx单行注释无需处理
-          if (/^(\/\*|\*|\/\/)|{\/\*.*?\*\/}/.test(str)||str.includes("i18nLocal")||str.includes("utilsLocal")) {
+          if (
+            /^(\/\*|\*|\/\/)|{\/\*.*?\*\/}/.test(str) ||
+            str.includes("i18nLocal") ||
+            str.includes("utilsLocal") ||
+            str.includes("console")
+          ) {
             return;
           }
           // 特殊情况暂不处理
@@ -263,9 +270,7 @@ utils.handI18n = function (
                             data,
                             startIndex,
                             `'${item.str}'`,
-                            `i18nLocal(${JSON.stringify(
-                              prefixKey + item.str
-                            )})`
+                            `i18nLocal(${JSON.stringify(prefixKey + item.str)})`
                           );
                         }
                         localesGather[prefixKey + item.str] =
@@ -305,9 +310,7 @@ utils.handI18n = function (
                           data,
                           startIndex,
                           `"${item}"`,
-                          `{i18nLocal(${JSON.stringify(
-                            prefixKey + item.str
-                          )})}`
+                          `{i18nLocal(${JSON.stringify(prefixKey + item.str)})}`
                         );
                       } else {
                         data = replacePos(
