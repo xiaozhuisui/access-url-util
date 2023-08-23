@@ -88,8 +88,6 @@ utils.handI18n = function (
   localesGather: { [key: string]: string },
   jsxStrList: string[]
 ) {
-  // 公共前缀key
-  let prefixKey = "";
   let pathList: string[] = [];
   if (fileName.includes("pages")) {
     pathList = fileName
@@ -105,15 +103,41 @@ utils.handI18n = function (
   }
   // 用正则也是可以的 可惜我正则弱鸡
   pathList.pop();
-  prefixKey = pathList.join(".") + ".";
+  // 公共前缀key
+  const prefixKey = pathList.join(".") + ".";
   const tagList: string[] = [];
   const startIndex = { value: 0 };
+
   // 目前只处理ts 和 tsx
   if (/\.(ts|tsx)$/.test(fileName)) {
     try {
       let data: string =
         "import { i18nLocal } from '@/utils/utils';\n " +
         fs.readFileSync(fileName, "utf8");
+      if (data.indexOf("export default") > -1) {
+        data = data.replace(
+          "export default",
+          "const prefixKey=" +
+            JSON.stringify(prefixKey) +
+            ";\n" +
+            "function getI18n(key: string) {\n" +
+            "return i18nLocal(prefixKey + key);\n" +
+            "}\n" +
+            "export default"
+        );
+      } else {
+        data = data.replace(
+          "import { i18nLocal } from '@/utils/utils';\n ",
+          (match) =>
+            match +
+            "const prefixKey=" +
+            JSON.stringify(prefixKey) +
+            ";\n" +
+            "function getI18n(key: string) {\n" +
+            "return i18nLocal(prefixKey + key);\n" +
+            "}\n"
+        );
+      }
       if (!TARGERT_ATTERN.test(data)) {
         return;
       }
@@ -518,7 +542,7 @@ utils.handI18n = function (
         console.log(error);
       }
       // {/*} 进行特殊处理
-      fs.writeFile(fileName, strList.join('\n'), "utf8", (err) => {
+      fs.writeFile(fileName, strList.join("\n"), "utf8", (err) => {
         if (err) {
           console.error("写入文件时出错:", err);
           return;

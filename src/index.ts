@@ -2,7 +2,8 @@ const fs = require("fs");
 
 import * as path from 'path'
 const inquirer = require("inquirer");
-const { handI18n,createLocalesGather,travel } = require("./utils");
+// const { handI18n,createLocalesGather,travel } = require("./checkUtils");
+const { handI18n,createLocalesGather,travel } = require("./checkUtils");
 async function i18nUtil(
   dir: string,
   filesList?: { fileName: string; jsxStrList: string[] }[]
