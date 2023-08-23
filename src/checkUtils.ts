@@ -1,12 +1,9 @@
-import { match } from "assert";
-import { replace } from "lodash";
-
 const fs = require("fs");
 const path = require("path");
 const utils: Record<string, Function> = {};
 // 正则 连续的中文 数字 空格 不含 纯数字 空格
 const TARGERT_ATTERN =
-  /[\u4E00-\u9FFF]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9.]*/g;
+  /[\u4E00-\u9FFF]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9.!！?？，：:（）、；/]*/g;
 // 完整标签的正则
 // <div>111</div>
 
@@ -31,8 +28,8 @@ utils.handI18n = function (
   pathList.pop();
   // 公共前缀key
   const prefixKey = pathList.join(".") + ".";
-  // 目前只处理tsx
-  if (/\.(tsx)$/.test(fileName)) {
+  // 目前只处理ts 以及 tsx
+  if (/\.(ts|tsx)$/.test(fileName)) {
     let data: string = fs.readFileSync(fileName, "utf8");
     TARGERT_ATTERN.lastIndex = 0;
     if (!TARGERT_ATTERN.test(data)) {
@@ -65,68 +62,90 @@ utils.handI18n = function (
               JSON.stringify(prefixKey) +
               ";\n" +
               "function getI18n(key: string) {\n" +
-              "return i18nLocal(prefixKey + key);\n" +
+              " return i18nLocal(prefixKey + key);\n" +
               "}\n"
           );
         }
       }
+      // 三种字符串形式替换 我赌了一把
       data = data.replaceAll("'", "龘");
       data = data.replaceAll('"', "齉");
+      // 不处理模版字符串
       data = data.replaceAll("`", "鱻");
-      console.log(data);
-      debugger;
       try {
         TARGERT_ATTERN.lastIndex = 0;
-        data.replace(TARGERT_ATTERN, (match: string, offset: number) => {
-          TARGERT_ATTERN.lastIndex = 0;
-          const [left, right] = [
-            data.lastIndexOf("\n", offset) === -1
-              ? offset
-              : data.lastIndexOf("\n", offset),
-            data.indexOf("\n", offset),
-          ];
-          const str = data.substring(left, right).replaceAll("\n", "");
-          debugger;
-          // * /* 注释无需替换 tsx单行注释无需处理
-          const trimStringStr = str.trimStart();
-          if (
-            trimStringStr.startsWith("//") ||
-            trimStringStr.startsWith("/*") ||
-            trimStringStr.startsWith("*") ||
-            trimStringStr === "龘" ||
-            trimStringStr === "齉"
-          ) {
-            return match;
-          }
-          if (str.includes("//")) {
-            const annotationIndex = str.indexOf("//");
-            const strIndex = str.indexOf(match);
-            if (annotationIndex < strIndex) {
+        data = data.replace(
+          TARGERT_ATTERN,
+          (match: string, offset: number, origin: string) => {
+            TARGERT_ATTERN.lastIndex = 0;
+            const [left, right] = [
+              data.lastIndexOf("\n", offset) === -1
+                ? offset
+                : data.lastIndexOf("\n", offset),
+              data.indexOf("\n", offset),
+            ];
+            const str = data.substring(left, right).replaceAll("\n", "");
+            // * /* 注释无需替换 tsx单行注释无需处理
+            const trimStringStr = str.trimStart();
+            debugger;
+            if (
+              trimStringStr.startsWith("//") ||
+              trimStringStr.startsWith("/*") ||
+              trimStringStr.startsWith("{/*") ||
+              trimStringStr.startsWith("*") ||
+              match === "龘" ||
+              match === "齉" ||
+              trimStringStr.includes("getI18n") ||
+              trimStringStr.includes("console") ||
+              trimStringStr.includes("moment(") ||
+              str.includes("鱻")
+            ) {
               return match;
             }
-          }
-          // 单双引号的情况
-          if (match.startsWith("龘") || match.startsWith("齉")) {
-            const innerMatch = match.substring(1, match.length - 1);
-            if (["龘", "齉", "鱻"].includes(innerMatch)||!TARGERT_ATTERN.test(innerMatch)) {
-              TARGERT_ATTERN.lastIndex===0
-              return match;
+            if (str.includes("//")) {
+              const annotationIndex = str.indexOf("//");
+              const strIndex = str.indexOf(match);
+              if (annotationIndex < strIndex) {
+                return match;
+              }
             }
-            localesGather[prefixKey + match.substring(1, match.length - 1)] =
-              match.substring(1, match.length - 1);
-            if (match.startsWith("龘")) {
-              return `getI18n(${match.substring(1, match.length - 1)})`;
-            } else {
-              return `{getI18n(${match.substring(1, match.length - 1)})}`;
+            // 单双引号的情况
+            if (match.startsWith("龘") || match.startsWith("齉")) {
+              let innerMatch = match.substring(1, match.length - 1);
+              while (
+                innerMatch.endsWith(")") ||
+                innerMatch.endsWith("龘") ||
+                innerMatch.endsWith("齉")
+              ) {
+                innerMatch = innerMatch.substring(0, innerMatch.length - 1);
+              }
+              if (
+                ["龘", "齉", "鱻"].includes(innerMatch) ||
+                !TARGERT_ATTERN.test(innerMatch)
+              ) {
+                TARGERT_ATTERN.lastIndex === 0;
+                return match;
+              }
+              localesGather[prefixKey + innerMatch.replace(/龘|齉|鱻/g,'')] = innerMatch.replace(/龘|齉|鱻/g,'');
+              if (match.startsWith("龘")) {
+                return `getI18n('${innerMatch}')`;
+              } else if (match.startsWith("齉")) {
+                debugger;
+                return `{getI18n('${innerMatch}')}`;
+              }
+              localesGather[prefixKey + match.replace(/龘|齉|鱻/g,'')] = match.replace(/龘|齉|鱻/g,'');
             }
+            // if (match.startsWith("鱻")||match.endsWith("鱻")) return match;
+            localesGather[prefixKey + match.replace(/龘|齉|鱻/g,'')] = match.replace(/龘|齉|鱻/g,'');
+            return `{getI18n('${match}')}`;
           }
-          localesGather[prefixKey + match] = match;
-          if (match.startsWith("鱻")) return match;
-          return `{getI18n(${match})}`;
-        });
+        );
       } catch (error) {
         console.log(error);
       }
+      data = data.replaceAll("龘", "'");
+      data = data.replaceAll("齉", '"');
+      data = data.replaceAll("鱻", "`");
       fs.writeFile(fileName, data, "utf8", (err) => {
         if (err) {
           console.error("写入文件时出错:", err);
