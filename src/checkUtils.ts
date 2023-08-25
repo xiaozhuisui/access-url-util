@@ -3,7 +3,7 @@ const path = require("path");
 const utils: Record<string, Function> = {};
 // 正则 连续的中文 数字 空格 不含 纯数字 空格
 const TARGERT_ATTERN =
-  /[\u4E00-\u9FFF]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9.!！?？，：:（）、；/]*/g;
+  /[\u4E00-\u9FFF]*[\u4E00-\u9FFF]+[\u4E00-\u9FFFa-zA-Z0-9.！？，：（）、；/。-]*/g;
 // 完整标签的正则
 // <div>111</div>
 

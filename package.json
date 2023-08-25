@@ -4,6 +4,9 @@
   "description": "比升生成页面权限点以及i18n工具",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
+  "bin": {
+    "i18n": "./bin/index.ts"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "watch": "webpack --watch",
