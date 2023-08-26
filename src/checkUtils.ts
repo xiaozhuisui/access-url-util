@@ -113,7 +113,6 @@ utils.handI18n = function (
             if (match.startsWith("龘") || match.startsWith("齉")) {
               let innerMatch = match.substring(1, match.length - 1);
               while (
-                innerMatch.endsWith(")") ||
                 innerMatch.endsWith("龘") ||
                 innerMatch.endsWith("齉")
               ) {
