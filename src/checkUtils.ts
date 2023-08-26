@@ -72,6 +72,8 @@ utils.handI18n = function (
       data = data.replaceAll('"', "齉");
       // 不处理模版字符串
       data = data.replaceAll("`", "鱻");
+      // 不替换则不添加
+      let isReplaceFlag = false;
       try {
         TARGERT_ATTERN.lastIndex = 0;
         data = data.replace(
@@ -87,7 +89,6 @@ utils.handI18n = function (
             const str = data.substring(left, right).replaceAll("\n", "");
             // * /* 注释无需替换 tsx单行注释无需处理
             const trimStringStr = str.trimStart();
-            debugger;
             if (
               trimStringStr.startsWith("//") ||
               trimStringStr.startsWith("/*") ||
@@ -112,10 +113,7 @@ utils.handI18n = function (
             // 单双引号的情况
             if (match.startsWith("龘") || match.startsWith("齉")) {
               let innerMatch = match.substring(1, match.length - 1);
-              while (
-                innerMatch.endsWith("龘") ||
-                innerMatch.endsWith("齉")
-              ) {
+              while (innerMatch.endsWith("龘") || innerMatch.endsWith("齉")) {
                 innerMatch = innerMatch.substring(0, innerMatch.length - 1);
               }
               if (
@@ -125,17 +123,21 @@ utils.handI18n = function (
                 TARGERT_ATTERN.lastIndex === 0;
                 return match;
               }
-              localesGather[prefixKey + innerMatch.replace(/龘|齉|鱻/g,'')] = innerMatch.replace(/龘|齉|鱻/g,'');
+              isReplaceFlag = true;
+              localesGather[prefixKey + innerMatch.replace(/龘|齉|鱻/g, "")] =
+                innerMatch.replace(/龘|齉|鱻/g, "");
               if (match.startsWith("龘")) {
                 return `getI18n('${innerMatch}')`;
               } else if (match.startsWith("齉")) {
-                debugger;
                 return `{getI18n('${innerMatch}')}`;
               }
-              localesGather[prefixKey + match.replace(/龘|齉|鱻/g,'')] = match.replace(/龘|齉|鱻/g,'');
+              isReplaceFlag = true;
+              localesGather[prefixKey + match.replace(/龘|齉|鱻/g, "")] =
+                match.replace(/龘|齉|鱻/g, "");
             }
-            // if (match.startsWith("鱻")||match.endsWith("鱻")) return match;
-            localesGather[prefixKey + match.replace(/龘|齉|鱻/g,'')] = match.replace(/龘|齉|鱻/g,'');
+            localesGather[prefixKey + match.replace(/龘|齉|鱻/g, "")] =
+              match.replace(/龘|齉|鱻/g, "");
+            isReplaceFlag = true;
             return `{getI18n('${match}')}`;
           }
         );
@@ -145,6 +147,7 @@ utils.handI18n = function (
       data = data.replaceAll("龘", "'");
       data = data.replaceAll("齉", '"');
       data = data.replaceAll("鱻", "`");
+      if (!isReplaceFlag) return;
       fs.writeFile(fileName, data, "utf8", (err) => {
         if (err) {
           console.error("写入文件时出错:", err);
