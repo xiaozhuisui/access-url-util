@@ -1,25 +1,12 @@
 const fs = require("fs");
 
 import * as path from 'path'
-const inquirer = require("inquirer");
 // const { handI18n,createLocalesGather,travel } = require("./checkUtils");
 const { handI18n,createLocalesGather,travel } = require("./checkUtils");
 async function i18nUtil(
   dir: string,
   filesList?: { fileName: string; jsxStrList: string[] }[]
 ) {
-  const { confirm } = await inquirer.prompt([
-    {
-      type: "confirm",
-      name: "confirm",
-      message: "你源码git提交了没有 没提交出问题风险自负！",
-      default: false,
-    },
-  ]);
-  if (!confirm) {
-    // 终止线程
-    process.exit(1);
-  }
 
   const targetDir = path.join(process.cwd(), dir);
   const localesGather: { [key: string]: "string" } = {};
@@ -41,9 +28,8 @@ async function i18nUtil(
       handI18n(pathname, localesGather);
     }
   });
-  console.log(localesGather)
-  debugger
   createLocalesGather(localesGather,targetDir)
+  console.log('程序执行结束！')
 }
 
 module.exports = { i18nUtil };

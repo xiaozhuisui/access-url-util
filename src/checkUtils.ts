@@ -49,7 +49,7 @@ utils.handI18n = function (
               JSON.stringify(prefixKey) +
               ";\n" +
               "function getI18n(key: string) {\n" +
-              "return i18nLocal(prefixKey + key) || key;\n" +
+              "return i18nLocal(prefixKey + key);\n" +
               "}\n" +
               match
           );
@@ -62,7 +62,7 @@ utils.handI18n = function (
               JSON.stringify(prefixKey) +
               ";\n" +
               "function getI18n(key: string) {\n" +
-              " return i18nLocal(prefixKey + key)  || key;\n" +
+              " return i18nLocal(prefixKey + key);\n" +
               "}\n"
           );
         }
@@ -99,6 +99,8 @@ utils.handI18n = function (
               trimStringStr.includes("getI18n") ||
               trimStringStr.includes("console") ||
               trimStringStr.includes("moment(") ||
+              trimStringStr.includes("i18nLocal")||
+              trimStringStr.includes("pages")||
               str.includes("鱻")
             ) {
               return match;
@@ -153,7 +155,6 @@ utils.handI18n = function (
           console.error("写入文件时出错:", err);
           return;
         }
-        console.log("文件写入成功!");
       });
       // 处理文件内容
     } catch (err) {
@@ -178,7 +179,6 @@ utils.createLocalesGather = function (
         console.error("写入文件时出错:", err);
         return;
       }
-      console.log("文件写入成功!");
     }
   );
 };
