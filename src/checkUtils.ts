@@ -37,7 +37,7 @@ utils.handI18n = function (
     }
     try {
       // 如果不包含处理函数
-      if (!data.includes("i18nLocal")) {
+      if (!data.includes("getI18n")) {
         data =
           "import { i18nLocal } from '@/utils/utils';\n " +
           fs.readFileSync(fileName, "utf8");
