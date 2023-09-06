@@ -39,31 +39,25 @@ utils.handI18n = function (
       // 如果不包含处理函数
       if (!data.includes("getI18n")) {
         data =
-          "import { i18nLocal } from '@/utils/utils';\n " +
+          "import { getI18nByPrefixKey } from '@/utils/utils';\n " +
           fs.readFileSync(fileName, "utf8");
         if (data.indexOf("export default") > -1) {
           data = data.replace(
             "export default",
             (match: string) =>
-              "const prefixKey=" +
+              "const getI18n=getI18nByPrefixKey(" +
               JSON.stringify(prefixKey) +
-              ";\n" +
-              "function getI18n(key: string) {\n" +
-              "return i18nLocal(prefixKey + key);\n" +
-              "}\n" +
+              ")\n" +
               match
           );
         } else {
           data = data.replace(
-            "import { i18nLocal } from '@/utils/utils';\n ",
+            "import { getI18nByPrefixKey } from '@/utils/utils';\n ",
             (match) =>
               match +
-              "const prefixKey=" +
+              "const getI18n=getI18nByPrefixKey(" +
               JSON.stringify(prefixKey) +
-              ";\n" +
-              "function getI18n(key: string) {\n" +
-              " return i18nLocal(prefixKey + key);\n" +
-              "}\n"
+              ")\n"
           );
         }
       }
@@ -99,8 +93,8 @@ utils.handI18n = function (
               trimStringStr.includes("getI18n") ||
               trimStringStr.includes("console") ||
               trimStringStr.includes("moment(") ||
-              trimStringStr.includes("i18nLocal")||
-              trimStringStr.includes("pages")||
+              trimStringStr.includes("i18nLocal") ||
+              trimStringStr.includes("pages") ||
               str.includes("鱻")
             ) {
               return match;
