@@ -7,13 +7,12 @@ async function i18nUtil(
   dir: string,
   filesList?: { fileName: string; jsxStrList: string[] }[]
 ) {
-
   const targetDir = path.join(process.cwd(), dir);
   const localesGather: { [key: string]: "string" } = {};
   if (filesList) {
     filesList.forEach((fileObject) => {
       const currentDirName = path.join(targetDir, fileObject.fileName);
-      handI18n(currentDirName, localesGather, fileObject.jsxStrList);
+      handI18n(currentDirName, localesGather);
     });
     createLocalesGather(localesGather,targetDir)
     return;
