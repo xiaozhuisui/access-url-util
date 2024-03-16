@@ -12,7 +12,7 @@ function getRandomHexColor() {
   const bHex = b.toString(16).padStart(2, "0");
 
   // 返回颜色字符串，例如 "#ffff00"
-  return `${rHex}${gHex}${bHex}`;
+  return `${rHex}${gHex}${bHex}12`;
 }
 // 获取文件路径;
 export function getFileAbsolutePath(dir: string) {
@@ -39,12 +39,12 @@ export function createExcel(columns,dataSource) {
   worksheet.columns.forEach((column) => {
     column.width = Math.max(column.header.length, 100);
   });
+  // todo 不知道为什么不生效
   worksheet.view = [{
       state: 'frozen',
-      xSplit: 0, // 冻结列
+      xSplit: 1, // 冻结列
       ySplit: 1, // 冻结行
     }]
-  const bgColor = getRandomHexColor();
    worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
       if (rowNumber === 1) {
         const bgColor = getRandomHexColor();
@@ -56,15 +56,6 @@ export function createExcel(columns,dataSource) {
           };
         });
       }
-      // else if(rowNumber % 2 === 1){
-      //   row.eachCell({ includeEmpty: false }, (cell) => {
-      //     cell.fill = {
-      //       type: "pattern",
-      //       pattern: "solid",
-      //       fgColor: { argb: bgColor }, // 辣眼睛背景
-      //     };
-      //   });
-      // }
   });
   // 保存工作簿到硬盘
   workbook.xlsx.writeFile(EXCEL_FILE_NAME);
