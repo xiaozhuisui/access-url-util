@@ -1,7 +1,4 @@
-import moment from "moment";
-const XLSX = require("xlsx");
 import * as path from "path";
-import * as fs from "fs";
 const Excel = require("exceljs");
 
 // 获取文件路径;
@@ -16,7 +13,7 @@ export function createExcel(columns,dataSource) {
   let workbook = new Excel.Workbook();
 
   // 添加一个工作表
-  let worksheet = workbook.addWorksheet('子应用书局');
+  let worksheet = workbook.addWorksheet('子应用数据');
 
   // 添加表头
   worksheet.columns = columns

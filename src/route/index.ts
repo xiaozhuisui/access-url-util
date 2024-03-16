@@ -44,7 +44,7 @@ function handleFileCodeJSONString(fileContent: string, filePath: string) {
           code: codeName,
           path: ((process.argv[process.argv.length - 1] as string) +
             pathString) as string,
-          filePath: `.src/pages/${componentsName}`,
+          filePath: `/pages/${componentsName}`,
         });
       }
       return item;
