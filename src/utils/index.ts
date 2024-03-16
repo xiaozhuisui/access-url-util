@@ -1,36 +1,46 @@
-import moment from 'moment';
-import * as xlsx from 'xlsx';
+import moment from "moment";
+const XLSX = require("xlsx");
 import * as path from "path";
+import * as fs from "fs";
+const Excel = require("exceljs");
+
 // 获取文件路径;
 export function getFileAbsolutePath(dir: string) {
   return path.join(process.cwd(), dir);
 }
 
-const EXCEL_FILE_NAME = "access.xlsx";
+const EXCEL_FILE_NAME =
+  process.argv[process.argv.length - 1].slice(1) + ".xlsx";
+export function createExcel(columns,dataSource) {
+  // 创建工作表对象
+  let workbook = new Excel.Workbook();
 
-export function createExcel(name = "access.xlsx", resultList) {
-  const workBook = xlsx.utils.book_new();
-  const workSheet = xlsx.utils.json_to_sheet(resultList);
-  // 3. 将工作表放入工作簿中
-  xlsx.utils.book_append_sheet(workBook, workSheet);
-  // const a = process
-  // console.log(a)
-  // const envMap={local:'本地',dev:'开发',test:'测试',pre:'预发',prod:'生产',pet:'压测'}
-  // 4. 生成数据保存
-  const outputPath = path.join(__dirname,EXCEL_FILE_NAME);
-  xlsx.writeFile(workBook, outputPath, {
-    bookType: "xlsx",
+  // 添加一个工作表
+  let worksheet = workbook.addWorksheet('子应用书局');
+
+  // 添加表头
+  worksheet.columns = columns
+  // 添加数据行
+  dataSource.forEach(item => {
+    worksheet.addRow(item)
+  })
+
+  // 设置每列的宽度
+  worksheet.columns.forEach((column) => {
+    column.width = Math.max(column.header.length, 100); // 设置列宽至少12个字符
   });
+
+  // 保存工作簿到硬盘
+  workbook.xlsx.writeFile(EXCEL_FILE_NAME);
 }
 
-export function readExcel(pathString = EXCEL_FILE_NAME,index=0) {
-  const workBook = xlsx.readFile(path.join(__dirname, EXCEL_FILE_NAME));
-  // 获取第一个工作表
-  const sheetName = workBook.SheetNames[index];
-  const worksheet = workBook.Sheets[sheetName];
-
-  const data = xlsx.utils.sheet_to_json(worksheet);
-  return data;
+export function readExcel(pathString = EXCEL_FILE_NAME, index = 0) {
+  // const workBook = xlsx.readFile(path.join(__dirname, EXCEL_FILE_NAME));
+  // // 获取第一个工作表
+  // const sheetName = workBook.SheetNames[index];
+  // const worksheet = workBook.Sheets[sheetName];
+  // const data = xlsx.utils.sheet_to_json(worksheet);
+  // return data;
 }
 
 export const REGEX = {
@@ -39,7 +49,7 @@ export const REGEX = {
   CODE: /code:\s'([a-zA-Z0-9-_]+)'/i,
   ANNOTATION_CODE: /\/\/code:\s'([a-zA-Z0-9-_]+)'/i,
   NAME: /name:\s'([a-zA-Z0-9-_]+)'/i,
-  ANNOTATION:/\/\//g
+  ANNOTATION: /\/\//g,
 };
 
 export const SEPARATOR = "{\n";

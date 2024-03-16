@@ -1,4 +1,4 @@
-import { REGEX, SEPARATOR, getFileAbsolutePath } from "@/utils/index";
+import { REGEX, SEPARATOR, createExcel, getFileAbsolutePath } from "@/utils/index";
 const fs = require("fs");
 
 const inquirer = require("inquirer");
@@ -37,12 +37,6 @@ function handleFileCodeJSONString(fileContent: string, filePath: string) {
           codeName = nameString + "-" + "page";
           // todo
           item = item.replace(matchName?.[0] as string, (match) => {
-            console.log(matchName);
-            if (
-              nameString === "viewSplitRules"
-            ) {
-              debugger;
-            }
             return `${match},\n code: '${codeName}'`;
           });
         }
@@ -56,8 +50,6 @@ function handleFileCodeJSONString(fileContent: string, filePath: string) {
       return item;
     })
     .join(SEPARATOR);
-  console.log(filesExcelDataList);
-  console.log(modifyContentString);
   fs.writeFileSync(filePath, modifyContentString);
 }
 
@@ -113,8 +105,10 @@ async function processRoute() {
       "npx prettier -w " +
         pretterFilePaths.map((path) => getFileAbsolutePath(path)).join(" ")
     );
+    const headers= [{header:'统一资源标识符',key:'path'},{header:'权限编码',key:'code'},{header:'文件位置',key:'filePath'},]
+    createExcel(headers,filesExcelDataList)
     secondProcess.on("close", (code) => {
-      console.log(`格式化结束，退出码：${code}`);
+      console.log(`添加编码处理结束，退出码：${code}`);
     });
   });
 }
