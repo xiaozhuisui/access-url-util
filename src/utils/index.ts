@@ -61,13 +61,23 @@ export function createExcel(columns,dataSource) {
   workbook.xlsx.writeFile(EXCEL_FILE_NAME);
 }
 
-export function readExcel(pathString = EXCEL_FILE_NAME, index = 0) {
-  // const workBook = xlsx.readFile(path.join(__dirname, EXCEL_FILE_NAME));
-  // // 获取第一个工作表
-  // const sheetName = workBook.SheetNames[index];
-  // const worksheet = workBook.Sheets[sheetName];
-  // const data = xlsx.utils.sheet_to_json(worksheet);
-  // return data;
+export async function readExcel(
+  pathString = EXCEL_FILE_NAME,
+  index = 1
+) {
+  const workbook = new Excel.Workbook();
+
+  // 读取Excel文件
+  await workbook.xlsx.readFile(pathString);
+
+  return workbook
+  // 获取第一个工作表
+  const worksheet = workbook.getWorksheet(index);
+
+  // 遍历工作表中的所有行
+  worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+    console.log(`Row ${rowNumber}:${row._cells}`);
+  });
 }
 
 export const REGEX = {

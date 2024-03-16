@@ -1,4 +1,5 @@
 import { REGEX, SEPARATOR, createExcel, getFileAbsolutePath } from "@/utils/index";
+import { handleExcelData } from "./loopPages";
 const fs = require("fs");
 
 const inquirer = require("inquirer");
@@ -6,7 +7,7 @@ const { program } = require("commander");
 const { exec } = require("child_process");
 const packageJson = require("/package.json");
 
-interface IFilesExcelDataListItem {
+export interface IFilesExcelDataListItem {
   code: string;
   path: string; //url
   filePath: string; //文件位置
@@ -110,6 +111,8 @@ async function processRoute() {
     createExcel(headers,filesExcelDataList)
     secondProcess.on("close", (code) => {
       console.log(`添加编码处理结束，退出码：${code}`);
+      // 其实也没啥必要 就是想玩玩
+      handleExcelData(filesExcelDataList);
     });
   });
 }
