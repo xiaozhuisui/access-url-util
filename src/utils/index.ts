@@ -1,6 +1,19 @@
 import * as path from "path";
 const Excel = require("exceljs");
+function getRandomHexColor() {
+  // 生成随机的红、绿、蓝颜色分量
+  const r = Math.floor(Math.random() * 256);
+  const g = Math.floor(Math.random() * 256);
+  const b = Math.floor(Math.random() * 256);
 
+  // 将每个颜色分量转换为十六进制字符串，并补齐两位
+  const rHex = r.toString(16).padStart(2, "0");
+  const gHex = g.toString(16).padStart(2, "0");
+  const bHex = b.toString(16).padStart(2, "0");
+
+  // 返回颜色字符串，例如 "#ffff00"
+  return `${rHex}${gHex}${bHex}`;
+}
 // 获取文件路径;
 export function getFileAbsolutePath(dir: string) {
   return path.join(process.cwd(), dir);
@@ -24,9 +37,35 @@ export function createExcel(columns,dataSource) {
 
   // 设置每列的宽度
   worksheet.columns.forEach((column) => {
-    column.width = Math.max(column.header.length, 100); // 设置列宽至少12个字符
+    column.width = Math.max(column.header.length, 100);
   });
-
+  worksheet.view = [{
+      state: 'frozen',
+      xSplit: 0, // 冻结列
+      ySplit: 1, // 冻结行
+    }]
+  const bgColor = getRandomHexColor();
+   worksheet.eachRow({ includeEmpty: false }, (row, rowNumber) => {
+      if (rowNumber === 1) {
+        const bgColor = getRandomHexColor();
+        row.eachCell({ includeEmpty: false }, (cell) => {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: bgColor }, // 辣眼睛背景
+          };
+        });
+      }
+      // else if(rowNumber % 2 === 1){
+      //   row.eachCell({ includeEmpty: false }, (cell) => {
+      //     cell.fill = {
+      //       type: "pattern",
+      //       pattern: "solid",
+      //       fgColor: { argb: bgColor }, // 辣眼睛背景
+      //     };
+      //   });
+      // }
+  });
   // 保存工作簿到硬盘
   workbook.xlsx.writeFile(EXCEL_FILE_NAME);
 }
