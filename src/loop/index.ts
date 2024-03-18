@@ -1,5 +1,5 @@
 
-import { CONTENT_SEPARATOR, DOU_SEPARATOR, ENDSUFFIX, IURLITEM, PREFIX_SUFFIX, REGEX, SEPARATOR, createExcel, getComponentPath, getFileAbsolutePath, getHideInMenu, getTargetCode, getUrlString, readExcel, updateExcel } from "@/utils/index";
+import { CONTENT_SEPARATOR, DOU_SEPARATOR, ENDSUFFIX, IURLITEM, PREFIX_SUFFIX, REGEX, SEPARATOR, createExcel, getComponentPath, getFileAbsolutePath, getHideInMenu, getTargetCode, getTargetURIPath, getUrlString, readExcel, updateExcel } from "@/utils/index";
 import { initial } from "lodash";
 
 import * as path from "path";
@@ -26,7 +26,9 @@ function handleFileContentJSONString(
   filePath: string,
   isHideInMenu: boolean,
   code:string,
-  isSub?:boolean
+  uri:string,
+  isSub?:boolean,
+  parentPath?:string
 ) {
   let fileContentStringArray: any = fileContent.split(CONTENT_SEPARATOR);
   fileContentStringArray = fileContentStringArray.map((item, index) => {
@@ -78,22 +80,21 @@ function handleFileContentJSONString(
           }
         }
       }
-      if(methodName){
-      // debugger
-      }
       urlExcelDataList.push({
         code: codeNameList.join(" | "),
         url: URLString.replace("'",""),
         method: methodName||"get",
         codeTodo: codeNameList.length > 2,
         methodNameTodo:methodName?false:true,
-        filePath,
+        filePath:filePath.split("/src")[1],
         isSub,
-        hideInMenu:isHideInMenu
+        path:uri,
+        hideInMenu:isHideInMenu,
+        parentPath:parentPath?.split("/src")?.[1]
       });
     }
   });
-  const filerGatherSubComponentsPath=gatherSubComponentsPath.filter(item=>!item.includes('.less')).map(item=>item.replaceAll("'",''))
+  const filerGatherSubComponentsPath=gatherSubComponentsPath.filter(item=>!item.includes('.less')||!item.includes('.svg')).map(item=>item.replaceAll("'",''))
   if (filerGatherSubComponentsPath.length) {
     filerGatherSubComponentsPathList.push(JSON.stringify(gatherSubComponentsPath))
     const childProcess = exec(
@@ -110,11 +111,11 @@ function handleFileContentJSONString(
           .join(" ")
     );
     childProcess.stdout.on("data", (data: string) => {
-      data.split("ms\n").forEach((filePath) => {
-        if (filePath) {
-          console.log(`正在处理引用文件: ${filePath.split(" ")[0]}`);
+      data.split("ms\n").forEach((cFilePath) => {
+        if (cFilePath) {
+          const targetFilePath = getFileAbsolutePath(cFilePath.split(" ")[0])
           let fileContentJSONString: string = fs.readFileSync(
-            getFileAbsolutePath(filePath.split(" ")[0]),
+            targetFilePath,
             "utf8"
           );
           // console.log(101)
@@ -124,24 +125,37 @@ function handleFileContentJSONString(
           // console.log(isHideInMenu)
           // console.log(code)
           if (!fileContentJSONString) return;
-          handleFileContentJSONString(fileContentJSONString,filePath,isHideInMenu,code,true)
+          handleFileContentJSONString(fileContentJSONString,targetFilePath,isHideInMenu,code,uri,true,filePath)
         }
       });
     });
     childProcess.on("close", () => {
       // console.log(urlExcelDataList)
+      function checkMethod(url: string) {
+        const checkList = ["list", "get", "detail", "List","qp-"];
+        return checkList.some((item) => url.includes(item));
+      }
+      const dataSource = urlExcelDataList.map((item) => ({
+        ...item,
+        methodNameTodo:
+          item.method === "get" && checkMethod(item.url)
+            ? false
+            : item.methodNameTodo,
+      }));
       const headers = [
       { header: "接口路径", key: "url", width: 80 },
-      { header: "文件位置", key: "filePath", width: 80 },
-      { header: "权限编码页面或按钮", key: "code", width: 30 },
-      { header: "检查页面Code", key: "codeTodo", width: 30 },
       { header: "请求方式", key: "method", width: 30 },
       { header: "检查方法", key: "methodNameTodo", width: 30 },
-      { header: "是否非菜单页面", key: "hideInMenu", width: 30 },
+      { header: "权限编码页面或按钮", key: "code", width: 30 },
+      { header: "统一资源标识符", key: "path", width: 30 },
+      { header: "文件位置", key: "filePath", width: 80 },
+      { header: "检查页面Code", key: "codeTodo", width: 30 },
+      { header: "引用文件位置", key: "parentPath", width: 30 },
       { header: "是子引用", key: "isSub", width: 30 },
+      { header: "是否非菜单页面", key: "hideInMenu", width: 30 },
     ];
       setTimeout(() => {
-        updateExcel(headers, [...urlExcelDataList,{url:filerGatherSubComponentsPathList}]);
+        updateExcel(headers, [...dataSource,{url:filerGatherSubComponentsPathList}]);
       }, 5000);
     })
   }
@@ -155,13 +169,15 @@ function handleGatherUrlData(dataSource:IFilesExcelDataListItem[],filePath: stri
 
   const isHideInMenu = getHideInMenu(dataSource, filePath.replace("./src", ""));
   const code = getTargetCode(dataSource, filePath.replace("./src", ""));
+  const uriPath = getTargetURIPath(dataSource, filePath.replace("./src", ""))
   if (!fileContentJSONString?.trim?.()) return;
   // debugger
   handleFileContentJSONString(
     fileContentJSONString,
     getFileAbsolutePath(filePath),
     isHideInMenu,
-    code
+    code,
+    uriPath
   );
 }
 

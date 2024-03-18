@@ -6,7 +6,8 @@
   "types": "lib/index.d.ts",
   "bin": {
     "route": "./bin/route.ts",
-    "loop": "./bin/loop.ts"
+    "loop": "./bin/loop.ts",
+    "config": "./bin/loop.ts"
   },
   "files": [
     "!src"

@@ -5,14 +5,6 @@ const { program } = require("commander");
 const { exec } = require("child_process");
 const packageJson = require("/package.json");
 
-export interface IFilesExcelDataListItem {
-  code: string;
-  path: string; //url
-  filePath: string; //文件位置
-  hideInMenu?: boolean;
-}
-
-const filesExcelDataList: IFilesExcelDataListItem[] = [];
 
 function handleFileCodeJSONString(fileContent: string, filePath: string) {
   const fileContentArray = fileContent.split(SEPARATOR);
@@ -129,7 +121,7 @@ async function processRoute() {
   });
 }
 
-function check() {
+function config() {
   program
     .version(packageJson.version, "-v", "--version")
     .requiredOption("-p, --public <public>", "子应用公共路径 如 /retail")
@@ -139,5 +131,5 @@ function check() {
     })
     .parse(process.argv);
 }
-export { check };
+export { config };
 

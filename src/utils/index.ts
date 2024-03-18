@@ -179,7 +179,24 @@ export function getTargetCode(
         item.filePath.includes(replacePath) ||
         item.filePath.includes(subReplacePath)
     ) || [];
-  return filerData?.map?.((i) => i.code)?.join?.("确定一下") || "";
+  return [...new Set(filerData?.map?.((i) => i.code))]?.join?.("确定一下") || "";
+}
+
+export function getTargetURIPath(
+  dataSource: IFilesExcelDataListItem[],
+  path: string
+) {
+  // console.log(path);
+  // console.log(dataSource);
+  const replacePath = path.replace(".tsx", "");
+  let subReplacePath = path.replace("index", "");
+  if (replacePath.endsWith("/index")) {
+    subReplacePath = replacePath.replace("/index", "");
+  }
+  const filerData = dataSource.filter(
+    (item) => item.filePath === replacePath || item.filePath === subReplacePath
+  );
+  return [...new Set(filerData?.map?.((i) => i.path))]?.join?.("确定一下") || "";
 }
 
 export function getComponentPath(
@@ -220,26 +237,14 @@ export  function getUrlString(contentString: string) {
   ];
   if (
     prefixStrList.find((item) => contentString.includes(item)) &&
-    contentString.includes("url:") || contentString.includes("/user")
+    (contentString.includes("url:") || contentString.includes("url ="))
   ) {
     const regex = /(`[^`\r\n]*`)|('[^'\r\n]*')/g;
     let obj = contentString.match(regex);
-    console.log(
-      "解析到url",
-      obj
-        ?.filter((item) =>
-          prefixStrList.some((sItem) => item.includes(sItem))
-        )
-        .map((item) => item?.replaceAll("'", ""))
-        .join(" aaa ")
-    );
-    return (
-      obj
-        ?.filter((item) =>
-          prefixStrList.some((sItem) => item.includes(sItem))
-        )?.[0]
-        ?.replaceAll("'", "") || ""
-    );
+    let targetUrl = obj?.filter((item) =>
+      prefixStrList.some((sItem) => item.includes(sItem))
+    )?.[0];
+    return targetUrl?.replaceAll("'", "") || "";
   }
   return "";
 }
@@ -262,6 +267,25 @@ export const REGEX = {
   CONTENT: /[,;]\n/,
 };
 
+export const handleBaseUrlPre = (baseName: string) => {
+  const baseUrlMap = new Map([
+    ["basicDataFront", "/basic"],
+    ["basicDchannelataFront", "/channel-manage"],
+    ["dcop", "/dcopis/api"],
+    ["channel", "/channel-manage"],
+    ["bop", "/bop/api"],
+    ["purchasing", "/purchasing/api"],
+    ["mca", "/marketingChannel/api"],
+    ["sca", "/sca/"],
+    ["scd", "/scd/"],
+    ["userFront", "/user"],
+    ["itemFront", "/items"],
+    ["settleFront", "/settle"],
+    ["stockFront", "/stock"],
+  ]);
+  let result = baseUrlMap.get(baseName) || null;
+  return result;
+};
 
 
 export const SEPARATOR = "{\n";
@@ -279,4 +303,6 @@ export interface IURLITEM {
   filePath: string;
   isSub?:boolean;
   hideInMenu?:boolean;
+  parentPath?:string;
+  path:string;
 }
