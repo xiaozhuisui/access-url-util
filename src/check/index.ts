@@ -1,7 +1,6 @@
 import { REGEX, SEPARATOR, createExcel, getFileAbsolutePath } from "@/utils/index";
 const fs = require("fs");
 
-const inquirer = require("inquirer");
 const { program } = require("commander");
 const { exec } = require("child_process");
 const packageJson = require("/package.json");
@@ -109,6 +108,8 @@ async function processRoute() {
     });
   });
 
+
+
   childProcess.on("close", (code) => {
     // 再进行一遍格式化
     const secondProcess = exec(
@@ -128,7 +129,7 @@ async function processRoute() {
   });
 }
 
-function main() {
+function check() {
   program
     .version(packageJson.version, "-v", "--version")
     .requiredOption("-p, --public <public>", "子应用公共路径 如 /retail")
@@ -138,5 +139,5 @@ function main() {
     })
     .parse(process.argv);
 }
-export { main };
+export { check };
 

@@ -1,6 +1,6 @@
 {
   "name": "access-url-util",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "description": "权限点收集工具",
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
