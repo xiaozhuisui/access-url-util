@@ -1,6 +1,10 @@
 const path = require("path");
 module.exports = {
-  entry: { route: "./src/route/index.ts", config: "./src/config/index.ts" },
+  entry: {
+    route: "./src/route/index.ts",
+    loop: "./src/loop/index.ts",
+    config: "./src/config/index.ts",
+  },
   output: {
     filename: "[name].js",
     path: path.resolve(__dirname, "lib"),
@@ -11,7 +15,7 @@ module.exports = {
   resolve: {
     extensions: [".ts", ".js"],
     alias: {
-      '@': path.resolve(__dirname, 'src'),
+      "@": path.resolve(__dirname, "src"),
     },
   },
   // 用于source map进行调试
@@ -24,10 +28,10 @@ module.exports = {
         exclude: /node_modules/,
         use: [
           {
-            loader: 'babel-loader',
+            loader: "babel-loader",
           },
           {
-            loader: 'ts-loader',
+            loader: "ts-loader",
           },
         ],
       },

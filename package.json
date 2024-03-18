@@ -5,7 +5,8 @@
   "main": "lib/index.js",
   "types": "lib/index.d.ts",
   "bin": {
-    "route": "./bin/route.ts"
+    "route": "./bin/route.ts",
+    "loop": "./bin/loop.ts"
   },
   "files": [
     "!src"

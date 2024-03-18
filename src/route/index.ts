@@ -1,5 +1,4 @@
 import { REGEX, SEPARATOR, createExcel, getFileAbsolutePath } from "@/utils/index";
-import { handleExcelData } from "./loopPages";
 const fs = require("fs");
 
 const inquirer = require("inquirer");
@@ -141,3 +140,4 @@ function main() {
     .parse(process.argv);
 }
 export { main };
+

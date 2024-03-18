@@ -1,3 +1,4 @@
+import { IFilesExcelDataListItem } from "@/route";
 import * as path from "path";
 const Excel = require("exceljs");
 function getRandomHexColor() {
@@ -57,23 +58,106 @@ export function createExcel(columns,dataSource) {
   workbook.xlsx.writeFile(EXCEL_FILE_NAME);
 }
 
-export async function readExcel(
+export async function readExcel<T>(
+  headers: string[],
+  index = 1,
   pathString = EXCEL_FILE_NAME,
-  index = 1
 ) {
   const workbook = new Excel.Workbook();
 
   // 读取Excel文件
   await workbook.xlsx.readFile(pathString);
 
-  return workbook
-  // 获取第一个工作表
+  workbook.getWorksheet(index);
   const worksheet = workbook.getWorksheet(index);
+  const dataSource: T[] = [];
+  worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
+    // 数据行从1开始 第一行是表头
+    if (rowNumber > 1) {
+      const coloum = {};
+      row._cells.forEach((cell, index) => {
+        coloum[headers[index]] = cell._value.model?.value;
+      });
+      dataSource.push(coloum as T);
+    }
+  });
+  return dataSource;
+  // 获取第一个工作表
 
   // 遍历工作表中的所有行
   worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
     console.log(`Row ${rowNumber}:${row._cells}`);
   });
+}
+
+export function getHideInMenu(
+  dataSource: IFilesExcelDataListItem[],
+  path: string
+) {
+  console.log(path);
+  console.log(dataSource);
+  const replacePath = path.replace(".tsx", "");
+  let subReplacePath = path.replace("index", "");
+  if (replacePath.endsWith("index")) {
+    subReplacePath = path.replace("index", "");
+  }
+  // debugger
+  const filerData = dataSource.filter(
+    (item) => item.filePath === replacePath || item.filePath === subReplacePath
+  );
+  if (filerData?.some?.((item) => item.hideInMenu === true)) {
+    // debugger;
+    return true;
+  }
+  return false;
+}
+
+export function getTargetCode(
+  dataSource: IFilesExcelDataListItem[],
+  path: string
+) {
+  console.log(path);
+  console.log(dataSource);
+  const replacePath = path.replace(".tsx", "");
+  let subReplacePath = path.replace("index", "");
+  if (replacePath.endsWith("index")) {
+    subReplacePath = path.replace("index", "");
+  }
+  const filerData = dataSource.filter(
+    (item) => item.filePath === replacePath || item.filePath === subReplacePath
+  )||[];
+  return filerData?.map?.(i=>i.code)?.join?.(" ")||"";
+}
+
+export function getComponentPath(
+  contentString:string
+){
+  if (
+    contentString.includes("import") &&
+    contentString.includes("from") &&
+    (contentString.includes("./") || contentString.includes("../"))
+  ) {
+    return contentString.split("from")[1].trim();
+  }
+  return "";
+}
+
+export  function getUrlString(contentString: string) {
+  const prefixStrList = [
+    "/posretail",
+    "/pay",
+    "/stock",
+    "/oms-ops",
+    "/pos-ops",
+    "/items",
+    "/basic"
+  ];
+  if (prefixStrList.find((item) => contentString.includes(item))) {
+    const regex = /(`[^`\r\n]*`)|('[^'\r\n]*')/g;
+    let obj = contentString.match(regex);
+    return obj?.filter((item) => prefixStrList.some(sItem=>item.includes(sItem)))?.[0]||"";
+  }
+  return "";
 }
 
 export const REGEX = {
@@ -84,6 +168,26 @@ export const REGEX = {
   NAME: /name:\s'([a-zA-Z0-9-_]+)'/i,
   ANNOTATION: /\/\//g,
   HIDEINMENU: /hideInMenu:\s*true/i,
+  // todo
+  // IMPORT: /import\s+(?:\w+\s+from\s+)?['"](?:\.\/|\.\.\/)[^'"]+['"]/i,
+  // IMPORT: /import\s+(\w+)\s+from\s+'\.\.\/(\w+)'/,
+  // IMPORT: /import\s+(\w+)\s+from\s+'(\.\.?\/[\w\.-]+)'/,
+  // URL:/\/(?:posretail|pay|stock|oms-ops|pos-ops)\/[\w-]+$/,
+  URL:/^\/(posretail|pay|stock|oms-ops|pos-ops|items)(?:\?.*)?$/,
+  METHOD:/(get|post|patch|put|delete)/i
 };
 
+
+
 export const SEPARATOR = "{\n";
+export const CONTENT_SEPARATOR = ";\n";
+export const ENDSUFFIX=['.tsx','/index.tsx']
+export const PREFIX_SUFFIX = ["/posretail", "/pay", "/stock", "/oms-ops"];
+
+export interface IURLITEM {
+  url: string;
+  code: string;
+  method: string;
+  todo?: boolean;
+  methodNameTodo?:boolean;
+}
