@@ -2,6 +2,8 @@
 
 npm i access-url-util -g
 
+**注意将本地 .prettierrc的printWidth属性设置成180**
+
 在命令行
 对应 -p 在config查询
 route -p /retail

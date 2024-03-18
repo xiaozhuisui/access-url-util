@@ -35,10 +35,6 @@ export function createExcel(columns,dataSource) {
     worksheet.addRow(item)
   })
 
-  // 设置每列的宽度
-  worksheet.columns.forEach((column) => {
-    column.width = Math.max(column.header.length, 100);
-  });
   // todo 不知道为什么不生效
   worksheet.view = [{
       state: 'frozen',
@@ -87,6 +83,7 @@ export const REGEX = {
   ANNOTATION_CODE: /\/\/code:\s'([a-zA-Z0-9-_]+)'/i,
   NAME: /name:\s'([a-zA-Z0-9-_]+)'/i,
   ANNOTATION: /\/\//g,
+  HIDEINMENU: /hideInMenu:\s*true/i,
 };
 
 export const SEPARATOR = "{\n";

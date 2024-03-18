@@ -11,6 +11,7 @@ export interface IFilesExcelDataListItem {
   code: string;
   path: string; //url
   filePath: string; //文件位置
+  hideInMenu?: boolean;
 }
 
 const filesExcelDataList: IFilesExcelDataListItem[] = [];
@@ -30,6 +31,8 @@ function handleFileCodeJSONString(fileContent: string, filePath: string) {
       const pathString = item.match(REGEX.PATH)?.[1];
       let codeName = item.match(REGEX.CODE)?.[1];
       const annotationCodeName = item.match(REGEX.ANNOTATION_CODE)?.[0];
+      const hideInMenu = item.match(REGEX.HIDEINMENU)?.[0];
+
       // 确定是不是组件 有些不是组件
       if (componentsName) {
         // 如果是组件 确定有没有code
@@ -47,11 +50,13 @@ function handleFileCodeJSONString(fileContent: string, filePath: string) {
             pathString) as string,
           // todo
           filePath: `/pages/${componentsName}`,
+          hideInMenu: hideInMenu ? true : undefined,
         });
       }
       return item;
     })
     .join(SEPARATOR);
+  console.log(modifyContentString);
   fs.writeFileSync(filePath, modifyContentString);
 }
 
@@ -60,6 +65,7 @@ function handleFileCode(filePath: string) {
     getFileAbsolutePath(filePath),
     "utf8"
   );
+  debugger
   handleFileCodeJSONString(
     fileContentJSONString,
     getFileAbsolutePath(filePath)
@@ -80,10 +86,11 @@ async function processRoute() {
   //   process.exit(1);
   // }
   const pretterFilePaths = [
-    "./config/route/*",
-    "./config/Route/*",
-    "./config/Routes/*",
-    "./config/Routers/*",
+    "./config/route/*.ts",
+    "./config/Route/*.ts",
+    "./config/Router/*.ts",
+    "./config/Routes/*.ts",
+    "./config/Routers/*.ts",
     "./config/routes.ts",
   ];
   const childProcess = exec(
@@ -91,6 +98,7 @@ async function processRoute() {
       pretterFilePaths.map((path) => getFileAbsolutePath(path)).join(" ")
   );
   childProcess.stdout.on("data", (data: string) => {
+    debugger
     data.split("ms\n").forEach((filePath) => {
       if (filePath) {
         console.log(
@@ -103,16 +111,21 @@ async function processRoute() {
   });
 
   childProcess.on("close", (code) => {
+    // 再进行一遍格式化
     const secondProcess = exec(
       "npx prettier -w " +
         pretterFilePaths.map((path) => getFileAbsolutePath(path)).join(" ")
     );
-    const headers= [{header:'统一资源标识符',key:'path'},{header:'权限编码',key:'code'},{header:'文件位置',key:'filePath'},]
+    const headers = [
+      { header: "统一资源标识符", key: "path", width: 80 },
+      { header: "权限编码", key: "code", width: 80 },
+      { header: "文件位置", key: "filePath", width: 80 },
+      { header: "是否非菜单页面", key: "hideInMenu", width: 30 },
+    ];
     createExcel(headers,filesExcelDataList)
     secondProcess.on("close", (code) => {
-      console.log(`添加编码处理结束，退出码：${code}`);
+      console.log(`路由添加权限编码结束，退出码：${code}`);
       // 其实也没啥必要 就是想玩玩
-      handleExcelData(filesExcelDataList);
     });
   });
 }
