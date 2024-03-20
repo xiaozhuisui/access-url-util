@@ -7,7 +7,7 @@
   "bin": {
     "route": "./bin/route.ts",
     "loop": "./bin/loop.ts",
-    "config": "./bin/loop.ts"
+    "config": "./bin/config.ts"
   },
   "files": [
     "!src"

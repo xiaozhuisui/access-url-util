@@ -117,8 +117,6 @@ export async function readExcel<T>(
 
   // 读取Excel文件
   await workbook.xlsx.readFile(pathString);
-
-  workbook.getWorksheet(index);
   const worksheet = workbook.getWorksheet(index);
   const dataSource: T[] = [];
   worksheet.eachRow({ includeEmpty: true }, (row, rowNumber) => {
@@ -181,6 +179,7 @@ export function getTargetCode(
     ) || [];
   return [...new Set(filerData?.map?.((i) => i.code))]?.join?.("确定一下") || "";
 }
+
 
 export function getTargetURIPath(
   dataSource: IFilesExcelDataListItem[],
@@ -252,6 +251,7 @@ export  function getUrlString(contentString: string) {
 export const REGEX = {
   COMPONENT: /component:\s'\.\/([\w/]+)'/i,
   PATH: /path:\s'([\w\-/:\.]+)'/i,
+  TH: /th:\s'([\w\-/:\.]+)'/i,
   CODE: /code:\s'([a-zA-Z0-9-_]+)'/i,
   ANNOTATION_CODE: /\/\/code:\s'([a-zA-Z0-9-_]+)'/i,
   NAME: /name:\s'([a-zA-Z0-9-_]+)'/i,
@@ -290,6 +290,7 @@ export const handleBaseUrlPre = (baseName: string) => {
 
 export const SEPARATOR = "{\n";
 export const CONTENT_SEPARATOR = ";\n";
+export const CONFIG_CONTENT_SEPARATOR = "children: [";
 export const DOU_SEPARATOR = ",\n";
 export const ENDSUFFIX=['.tsx','/index.tsx','.js']
 export const PREFIX_SUFFIX = ["/posretail", "/pay", "/stock", "/oms-ops"];
@@ -301,8 +302,9 @@ export interface IURLITEM {
   codeTodo?: boolean;
   methodNameTodo?: boolean;
   filePath: string;
-  isSub?:boolean;
-  hideInMenu?:boolean;
-  parentPath?:string;
-  path:string;
+  isSub?: boolean;
+  hideInMenu?: boolean;
+  parentPath?: string;
+  path: string;
+  HideInMenuCode?: string;
 }

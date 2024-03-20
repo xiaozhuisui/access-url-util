@@ -1,11 +1,14 @@
 
 import { CONFIG_CONTENT_SEPARATOR, CONTENT_SEPARATOR, DOU_SEPARATOR, ENDSUFFIX, IURLITEM, PREFIX_SUFFIX, REGEX, SEPARATOR, getComponentPath, getFileAbsolutePath, getHideInMenu, getTargetCode, getTargetURIPath, getUrlString, readExcel, updateExcel } from "@/utils/index";
+
+  const os = require('os');
+import * as path from "path";
 const fs = require("fs");
-import sourceTree from './model'
+
 const { program } = require("commander");
 const { exec } = require("child_process");
 const packageJson = require("/package.json");
-let componentData:any[]=[]
+
 export interface IFilesExcelDataListItem {
   code: string;
   path: string; //url
@@ -14,46 +17,25 @@ export interface IFilesExcelDataListItem {
 }
 
 
-function loopSourceTree(
-  sourceTree: any,
-  dataSource: Record<string,IFilesExcelDataListItem[]>,
+function handleFileContentJSONString(
+  fileContent: string,
+  dataSource: Record<string,IFilesExcelDataListItem[]>
 ) {
-  sourceTree.forEach((item: any) => {
-    const targetDataItem= dataSource[item?.path]
-    const code = componentData.find(fItem=>(fItem.path===item.path))?.code
-    if (item.code !== code) {
-      item.code = code || "code不存在";
+  let fileContentStringArray: any = fileContent.split(CONFIG_CONTENT_SEPARATOR);
+  debugger
+  fileContentStringArray.forEach((item, index) => {
+    // 被注释的
+    // todo
+    if (!item||(item?.match(REGEX.ANNOTATION) as any[])?.length) {
+      return item;
     }
-    if (item.children) {
-      loopSourceTree(item.children, dataSource);
-    } else if (item.buttons||targetDataItem) {
-      targetDataItem?.forEach((tItem: any) => {
-        if (tItem.code) {
-          const button = item?.buttons?.find(
-            (button: any) => tItem.code === button.code
-          );
-          if (button) {
-            if (button.api) {
-              button.api.push({ method: tItem.method, path: tItem.url });
-            } else {
-              button.api = [{ method: tItem.method, path: tItem.url }];
-            }
-          } else {
-            if (item.api) {
-              item.api.push({ method: tItem.method, path: tItem.url });
-            } else {
-              item.api = [{ method: tItem.method, path: tItem.url }];
-            }
-          }
-        } else {
-          if (item.api) {
-            item.api.push({ method: tItem.method, path: tItem.url });
-          } else {
-            item.api = [{ method: tItem.method, path: tItem.url }];
-          }
-        }
-      });
-
+    const pathString = item.match(REGEX.TH)?.[1];
+    if (pathString) {
+      const matchDataItem = dataSource[pathString];
+      debugger
+      if (matchDataItem) {
+        debugger;
+      }
     }
   });
 }
@@ -76,31 +58,20 @@ function handleDataSource(
   return result;
 }
 
-async function handleConfigRouteContent(dataSource:IFilesExcelDataListItem[],filePath: string,sourceTree:any) {
-  // let fileContentJSONString: string = fs.readFileSync(
-  //   getFileAbsolutePath(filePath),
-  //   "utf8"
-  // );
-  const resultDataSource: Record<string,IFilesExcelDataListItem[]>=handleDataSource(dataSource)
-  loopSourceTree(
-    sourceTree,
-    resultDataSource,
+function handleConfigJSONContent(dataSource:IFilesExcelDataListItem[],filePath: string) {
+  let fileContentJSONString: string = fs.readFileSync(
+    getFileAbsolutePath(filePath),
+    "utf8"
   );
-  console.log(sourceTree)
-  debugger
-  fs.writeFileSync(filePath, JSON.stringify(sourceTree));
-
-
-
+  if (!fileContentJSONString?.trim?.()) return;
+  const resultDataSource: Record<string,IFilesExcelDataListItem[]>=handleDataSource(dataSource)
+  handleFileContentJSONString(
+    fileContentJSONString,
+    resultDataSource
+  );
 }
 
 async function processConfig() {
-    componentData = await readExcel<IFilesExcelDataListItem>([
-    "path",
-    "code",
-    "filePath",
-    "hideInMenu",
-  ]);
   const dataSource = await readExcel<IFilesExcelDataListItem>([
     "url",
     "method",
@@ -119,21 +90,49 @@ async function processConfig() {
       (Map[process.argv[process.argv.length - 1].slice(1)] ||
         process.argv[process.argv.length - 1].slice(1)) +
       ".ts"
-  handleConfigRouteContent(
-    dataSource,
-    process.cwd() +
-      "/src/pages/Test/RouteConfig/" +
+  const absolutePath = path.join(
+    process.cwd(),
+  "./src/pages/Test/RouteConfig/" +
       (Map[process.argv[process.argv.length - 1].slice(1)] ||
         process.argv[process.argv.length - 1].slice(1)) +
-      ".ts",
-    sourceTree
+      ".ts"
   );
+
+
+// 获取当前用户的home目录（在Mac上通常是/Users/用户名）
+const homeDir = os.homedir();
+
+// 假设你的模块位于用户的Documents文件夹下
+const modulePath = path.join(homeDir, '/Desktop/BITSUN/URGROUP/URFRONT/configure-platform-front/src/pages/Test/RouteConfig/', 'drp.js');
+debugger
+// 引入模块
+const myModule = require(modulePath);
+  debugger
+  debugger
   const childProcess = exec(
     npxPrettier
   );
   childProcess.stdout.on("data", (data: string) => {
     console.log("解析的文件",data);
-
+    data
+      .split("ms\n")
+      .filter((i) => i)
+      .forEach((filePath) => {
+        if (filePath) {
+          console.log(
+            `正在格式化文件并准备处理配置文件: ${filePath.split(" ")[0]}\n`
+          );
+          // console.log(`${filePath.split(" ")[0]}`);
+          handleConfigJSONContent(dataSource, `./${filePath.split(" ")[0]}`);
+        }
+      });
+  });
+  childProcess.on("close", (code) => {
+    // 再进行一遍格式化
+    setTimeout(() => {
+    exec(npxPrettier);
+    console.log("程序运行结束");
+    }, 5000);
   });
 }
 

@@ -1,11 +1,9 @@
 
-import { CONTENT_SEPARATOR, DOU_SEPARATOR, ENDSUFFIX, IURLITEM, PREFIX_SUFFIX, REGEX, SEPARATOR, createExcel, getComponentPath, getFileAbsolutePath, getHideInMenu, getTargetCode, getTargetURIPath, getUrlString, readExcel, updateExcel } from "@/utils/index";
-import { initial } from "lodash";
+import { CONTENT_SEPARATOR, DOU_SEPARATOR, ENDSUFFIX, IURLITEM, PREFIX_SUFFIX, REGEX, SEPARATOR, getComponentPath, getFileAbsolutePath, getHideInMenu, getTargetCode, getTargetURIPath, getUrlString, readExcel, updateExcel } from "@/utils/index";
 
 import * as path from "path";
 const fs = require("fs");
 
-const inquirer = require("inquirer");
 const { program } = require("commander");
 const { exec } = require("child_process");
 const packageJson = require("/package.json");
@@ -153,6 +151,7 @@ function handleFileContentJSONString(
       { header: "引用文件位置", key: "parentPath", width: 30 },
       { header: "是子引用", key: "isSub", width: 30 },
       { header: "是否非菜单页面", key: "hideInMenu", width: 30 },
+      { header: "隐藏页面Code", key: "HideInMenuCode", width: 30 },
     ];
       setTimeout(() => {
         updateExcel(headers, [...dataSource,{url:filerGatherSubComponentsPathList}]);
