@@ -1,13 +1,13 @@
 
-import { CONTENT_SEPARATOR, DOU_SEPARATOR, ENDSUFFIX, IURLITEM, PREFIX_SUFFIX, REGEX, SEPARATOR, getComponentPath, getFileAbsolutePath, getHideInMenu, getTargetCode, getTargetURIPath, getUrlString, readExcel, updateExcel } from "@/utils/index";
-
+import { CONTENT_SEPARATOR, DOU_SEPARATOR, ENDSUFFIX, IURLITEM, PREFIX_SUFFIX, REGEX, SEPARATOR, URLItemHeaders, getComponentPath, getFileAbsolutePath, getHideInMenu, getTargetCode, getTargetURIPath, getUrlString, readExcel, updateExcel } from "@/utils/index";
+import moment from "moment";
 import * as path from "path";
 const fs = require("fs");
 
 const { program } = require("commander");
 const { exec } = require("child_process");
 const packageJson = require("/package.json");
-
+let startTime=0
 export interface IFilesExcelDataListItem {
   code: string;
   path: string; //url
@@ -17,7 +17,8 @@ export interface IFilesExcelDataListItem {
 
 const urlExcelDataList: IURLITEM[] = [];
 const filerGatherSubComponentsPathList:string[]=[]
-
+let readExcelDataSource:IFilesExcelDataListItem[] = [];
+const readExcelDataSourceMap: Record<string,IFilesExcelDataListItem> = {};
 
 function handleFileContentJSONString(
   fileContent: string,
@@ -30,14 +31,18 @@ function handleFileContentJSONString(
 ) {
   let fileContentStringArray: any = fileContent.split(CONTENT_SEPARATOR);
   fileContentStringArray = fileContentStringArray.map((item, index) => {
-    return item.split(DOU_SEPARATOR);
+    return item.split(DOU_SEPARATOR).map(mItem=>mItem.split("\n"));
   }).flat(Infinity)
   const gatherSubComponentsPath:string[]=[]
   fileContentStringArray.forEach((item, index) => {
+
     // debugger
     // 被注释的
     // todo
-    if (!item||(item?.match(REGEX.ANNOTATION) as any[])?.length) {
+    if (
+      !item ||
+      (item?.match(REGEX.ANNOTATION) as any[])?.length
+    ) {
       return item;
     }
     // const componentsStringObj = item.match(REGEX.IMPORT);
@@ -49,7 +54,7 @@ function handleFileContentJSONString(
       gatherSubComponentsPath.push(componentsPath);
     }
     // const URLStringObj = item.match(REGEX.URL);
-    const URLString = getUrlString(item);
+    const URLString = getUrlString(item,isSub);
     // if (URLStringObj?.length) {
     //   debugger
     // }
@@ -74,7 +79,9 @@ function handleFileContentJSONString(
               methodName = resultMethod;
             }
           } catch (error) {
-            debugger;
+            if (isSub) {
+              debugger;
+            }
           }
         }
       }
@@ -82,7 +89,6 @@ function handleFileContentJSONString(
         code: codeNameList.join(" | "),
         url: URLString.replace("'",""),
         method: methodName||"get",
-        codeTodo: codeNameList.length > 2,
         methodNameTodo:methodName?false:true,
         filePath:filePath.split("/src")[1],
         isSub,
@@ -100,37 +106,39 @@ function handleFileContentJSONString(
         filerGatherSubComponentsPath
           .map((item) =>{
             const targetPathArray = (filePath as string).split("/");
-            targetPathArray.pop()
-            const targetPath=targetPathArray.join("/")
+            targetPathArray.pop();
+            const targetPath = targetPathArray.join("/");
             return [".ts", ...ENDSUFFIX]
-              .map((subffix) => path.join(targetPath, item, subffix).replace('/.tsx', '.tsx'))
-              .join(" ")}
+              .map((subffix) =>
+                path
+                  .join(targetPath, item, subffix)
+                  .replace("/.tsx", ".tsx")
+                  .replace("/.ts", ".ts")
+                  .replace("/.js", ".js")
+                  .replace(";", "")
+              )
+              .join(" ");
+          }
           )
           .join(" ")
     );
     childProcess.stdout.on("data", (data: string) => {
       data.split("ms\n").forEach((cFilePath) => {
         if (cFilePath) {
+          // debugger
           const targetFilePath = getFileAbsolutePath(cFilePath.split(" ")[0])
           let fileContentJSONString: string = fs.readFileSync(
             targetFilePath,
             "utf8"
           );
-          // console.log(101)
-          // console.log(getFileAbsolutePath(filePath.split(" ")[0]))
-          // console.log(fileContentJSONString)
-          // console.log(filePath)
-          // console.log(isHideInMenu)
-          // console.log(code)
           if (!fileContentJSONString) return;
           handleFileContentJSONString(fileContentJSONString,targetFilePath,isHideInMenu,code,uri,true,filePath)
         }
       });
     });
     childProcess.on("close", () => {
-      // console.log(urlExcelDataList)
       function checkMethod(url: string) {
-        const checkList = ["list", "get", "detail", "List","qp-"];
+        const checkList = ["list", "get", "detail", "List", "qp-"];
         return checkList.some((item) => url.includes(item));
       }
       const dataSource = urlExcelDataList.map((item) => ({
@@ -140,44 +148,48 @@ function handleFileContentJSONString(
             ? false
             : item.methodNameTodo,
       }));
-      const headers = [
-      { header: "接口路径", key: "url", width: 80 },
-      { header: "请求方式", key: "method", width: 30 },
-      { header: "检查方法", key: "methodNameTodo", width: 30 },
-      { header: "权限编码页面或按钮", key: "code", width: 30 },
-      { header: "统一资源标识符", key: "path", width: 30 },
-      { header: "文件位置", key: "filePath", width: 80 },
-      { header: "检查页面Code", key: "codeTodo", width: 30 },
-      { header: "引用文件位置", key: "parentPath", width: 30 },
-      { header: "是子引用", key: "isSub", width: 30 },
-      { header: "是否非菜单页面", key: "hideInMenu", width: 30 },
-      { header: "隐藏页面Code", key: "HideInMenuCode", width: 30 },
-    ];
+
       setTimeout(() => {
-        updateExcel(headers, [...dataSource,{url:filerGatherSubComponentsPathList}]);
+        updateExcel(URLItemHeaders, [
+          ...dataSource,
+          // filerGatherSubComponentsPathList
+        ],startTime);
       }, 5000);
-    })
+    });
   }
 }
 
-function handleGatherUrlData(dataSource:IFilesExcelDataListItem[],filePath: string) {
-  let fileContentJSONString: string = fs.readFileSync(
-    getFileAbsolutePath(filePath),
-    "utf8"
-  );
-
-  const isHideInMenu = getHideInMenu(dataSource, filePath.replace("./src", ""));
-  const code = getTargetCode(dataSource, filePath.replace("./src", ""));
-  const uriPath = getTargetURIPath(dataSource, filePath.replace("./src", ""))
+function handleGatherUrlData(filePath: string,IFilesExcelDataListItem:IFilesExcelDataListItem) {
+  let fileContentJSONString: string = "";
+  try {
+    fileContentJSONString = fs.readFileSync(
+      filePath,
+      "utf8"
+    );
+    readExcelDataSourceMap[filePath.replace("./src/pages", "")] = IFilesExcelDataListItem;
+  } catch (error) {
+    return
+  }
   if (!fileContentJSONString?.trim?.()) return;
-  // debugger
-  handleFileContentJSONString(
-    fileContentJSONString,
-    getFileAbsolutePath(filePath),
-    isHideInMenu,
-    code,
-    uriPath
-  );
+    const isHideInMenu = getHideInMenu(
+      readExcelDataSourceMap,
+      filePath.replace("./src/pages", "")
+    );
+    const code = getTargetCode(
+      readExcelDataSourceMap,
+      filePath.replace("./src/pages", "")
+    );
+    const uriPath = getTargetURIPath(
+      readExcelDataSourceMap,
+      filePath.replace("./src/pages", "")
+    );
+    handleFileContentJSONString(
+      fileContentJSONString,
+      filePath,
+      isHideInMenu,
+      code,
+      uriPath
+    );
 }
 
 async function processLoop() {
@@ -194,54 +206,30 @@ async function processLoop() {
   //   process.exit(1);
   // }
 
-  const dataSource = await readExcel<IFilesExcelDataListItem>([
+  readExcelDataSource = await readExcel<IFilesExcelDataListItem>([
     "path",
     "code",
     "filePath",
     "hideInMenu",
   ]);
-  console.log('dataSource',dataSource.length)
-  console.log('期望解析的文件',dataSource
-        .map((item) =>
-          ENDSUFFIX
-            .map((subffix) =>
-              getFileAbsolutePath(`./src/${item.filePath}${subffix}`)
-            )
-            .join(" ")
-        )
-        .join(" "))
-  console.log(
-    '组合后的版本',
-    dataSource.map((item) =>
-      ENDSUFFIX.map((subffix) =>
-        getFileAbsolutePath(`./src/${item.filePath}${subffix}`)
-      ).join(" ")
-    ).length
-  );
   const childProcess = exec(
-    "npx prettier -w " +
-      dataSource
-        .map((item) =>
-          ENDSUFFIX
-            .map((subffix) =>
-              getFileAbsolutePath(`./src/${item.filePath}${subffix}`)
-            )
-            .join(" ")
-        )
-        .join(" ")
+    "npx prettier -w "+getFileAbsolutePath("/src/pages/*")
   );
   childProcess.stdout.on("data", (data: string) => {
     console.log("解析的文件",data);
-    console.log('本次数量',data.split("ms\n").length)
-    console.log('本次数量',data.split("ms\n"))
-    data.split("ms\n").filter(i=>i).forEach((filePath) => {
-      if (filePath) {
-        console.log(
-          `正在格式化文件并准备处理文件: ${filePath.split(" ")[0]}\n`
+    // 格式化的文件
+  });
+
+  childProcess.on("close", (code) => {
+    console.log('正则编写excel文件',code)
+     readExcelDataSource.forEach((item) => {
+      ENDSUFFIX.forEach((subffix) => {
+        const filePath = getFileAbsolutePath(
+          `./src/${item.filePath}${subffix}`
         );
-        // console.log(`${filePath.split(" ")[0]}`);
-        handleGatherUrlData(dataSource,`./${filePath.split(" ")[0]}`);
-      }
+        // debugger
+        handleGatherUrlData(filePath,item)
+      });
     });
   });
 }
@@ -252,7 +240,9 @@ function loop() {
     .requiredOption("-p, --public <public>", "子应用公共路径 如 /retail")
     .description("路由配置code以及扫描对应路径工具 power by zhuisui")
     .action((params) => {
+       startTime= Date.now()
       processLoop();
+
     })
     .parse(process.argv);
 }

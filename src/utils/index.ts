@@ -1,7 +1,7 @@
 import { IFilesExcelDataListItem } from "@/route";
 import * as path from "path";
-import {debounce} from 'lodash'
-
+import {debounce, result} from 'lodash'
+import moment from "moment";
 const Excel = require("exceljs");
 function getRandomHexColor() {
   // 生成随机的红、绿、蓝颜色分量
@@ -61,9 +61,13 @@ export function createExcel(columns,dataSource) {
 }
 
 export const updateExcel = debounce(
-  async (columns, dataSource, pathString = EXCEL_FILE_NAME) => {
+  async (
+    columns,
+    dataSource,
+    startTime: number,
+    pathString = EXCEL_FILE_NAME
+  ) => {
     const workbook = new Excel.Workbook();
-    console.log('执行一遍')
     // 读取Excel文件
     await workbook.xlsx.readFile(pathString);
     const sheetName = "子应用URL数据";
@@ -104,6 +108,10 @@ export const updateExcel = debounce(
     });
     // 保存工作簿到硬盘
     workbook.xlsx.writeFile(EXCEL_FILE_NAME);
+    console.log(
+        "程序运行结束",
+        "运行时间 " + moment.duration(Date.now() - startTime)
+      );
   },
   10000
 );
@@ -139,68 +147,32 @@ export async function readExcel<T>(
 }
 
 export function getHideInMenu(
-  dataSource: IFilesExcelDataListItem[],
+  readExcelDataSourceMap:Record<string, IFilesExcelDataListItem> = {},
   path: string
 ) {
-  // console.log(path);
-  // console.log(dataSource);
-  const replacePath = path.replace(".tsx", "");
-  let subReplacePath = path.replace("index", "");
-  if (replacePath.endsWith("index")) {
-    subReplacePath = path.replace("index", "");
-  }
-  // debugger
-  const filerData = dataSource.filter(
-    (item) => item.filePath === replacePath || item.filePath === subReplacePath
-  );
-  if (filerData?.some?.((item) => item.hideInMenu === true)) {
-    // debugger;
-    return true;
-  }
-  return false;
+  return Boolean(readExcelDataSourceMap[path]?.hideInMenu);
 }
 
 export function getTargetCode(
-  dataSource: IFilesExcelDataListItem[],
+  readExcelDataSourceMap:Record<string, IFilesExcelDataListItem> = {},
   path: string
 ) {
-  // console.log(path);
-  // console.log(dataSource);
-  const replacePath = path.replace(".tsx", "");
-  let subReplacePath = path.replace("index", "");
-  if (replacePath.endsWith("/index")) {
-    subReplacePath = replacePath.replace("/index", "");
-  }
-  const filerData =
-    dataSource.filter(
-      (item) =>
-        item.filePath.includes(replacePath) ||
-        item.filePath.includes(subReplacePath)
-    ) || [];
-  return [...new Set(filerData?.map?.((i) => i.code))]?.join?.("确定一下") || "";
+  return String(readExcelDataSourceMap[path]?.code)
 }
 
 
 export function getTargetURIPath(
-  dataSource: IFilesExcelDataListItem[],
+  readExcelDataSourceMap:Record<string, IFilesExcelDataListItem> = {},
   path: string
 ) {
-  // console.log(path);
-  // console.log(dataSource);
-  const replacePath = path.replace(".tsx", "");
-  let subReplacePath = path.replace("index", "");
-  if (replacePath.endsWith("/index")) {
-    subReplacePath = replacePath.replace("/index", "");
-  }
-  const filerData = dataSource.filter(
-    (item) => item.filePath === replacePath || item.filePath === subReplacePath
-  );
-  return [...new Set(filerData?.map?.((i) => i.path))]?.join?.("确定一下") || "";
+  // debugger
+  return String(readExcelDataSourceMap[path]?.path)
 }
 
 export function getComponentPath(
   contentString:string
 ){
+  // import xxx from './../';
   if (
     contentString.includes("import") &&
     contentString.includes("from") &&
@@ -211,7 +183,7 @@ export function getComponentPath(
   return "";
 }
 
-export  function getUrlString(contentString: string) {
+export  function getUrlString(contentString: string,isSub=false) {
   const prefixStrList = [
     "/posretail",
     "/pay",
@@ -234,9 +206,14 @@ export  function getUrlString(contentString: string) {
     // 这个扑街搞特殊
     "handleBaseUrlPre",
   ];
+  if(isSub){
+    debugger
+  }
   if (
     prefixStrList.find((item) => contentString.includes(item)) &&
-    (contentString.includes("url:") || contentString.includes("url ="))
+    (contentString.includes("url:") ||
+      contentString.includes("url =") ||
+      contentString.includes("request"))
   ) {
     const regex = /(`[^`\r\n]*`)|('[^'\r\n]*')/g;
     let obj = contentString.match(regex);
@@ -267,7 +244,7 @@ export const REGEX = {
   CONTENT: /[,;]\n/,
 };
 
-export const handleBaseUrlPre = (baseName: string) => {
+export function handleBaseUrlPre(baseName: string){
   const baseUrlMap = new Map([
     ["basicDataFront", "/basic"],
     ["basicDchannelataFront", "/channel-manage"],
@@ -288,12 +265,41 @@ export const handleBaseUrlPre = (baseName: string) => {
 };
 
 
+export function getBaseUrlPreString(content){
+    const map = {
+      "handleBaseUrlPre(basicDataFront)": "/basic",
+      "handleBaseUrlPre(channel)": "/channel",
+      "handleBaseUrlPre(itemFront)": "/items",
+    };
+    for (const key in map) {
+      if(content.includes(key)){
+        return content.replace(key,map[key]);
+      }
+    }
+
+  return;
+}
+
 export const SEPARATOR = "{\n";
 export const CONTENT_SEPARATOR = ";\n";
 export const CONFIG_CONTENT_SEPARATOR = "children: [";
 export const DOU_SEPARATOR = ",\n";
 export const ENDSUFFIX=['.tsx','/index.tsx','.js']
 export const PREFIX_SUFFIX = ["/posretail", "/pay", "/stock", "/oms-ops"];
+
+export const URLItemHeaders = [
+      { header: "接口路径", key: "url", width: 80 },
+      { header: "请求方式", key: "method", width: 30 },
+      { header: "检查方法", key: "methodNameTodo", width: 30 },
+      { header: "权限编码页面或按钮", key: "code", width: 30 },
+      { header: "统一资源标识符", key: "path", width: 30 },
+      { header: "文件位置", key: "filePath", width: 80 },
+      { header: "检查页面Code", key: "codeTodo", width: 30 },
+      { header: "引用文件位置", key: "parentPath", width: 30 },
+      { header: "是子引用", key: "isSub", width: 30 },
+      { header: "是否非菜单页面", key: "hideInMenu", width: 30 },
+      { header: "隐藏页面Code", key: "HideInMenuCode", width: 30 },
+    ];
 
 export interface IURLITEM {
   url: string;
@@ -307,4 +313,12 @@ export interface IURLITEM {
   parentPath?: string;
   path: string;
   HideInMenuCode?: string;
+}
+
+export function handleConfigUrl(url: string) {
+  let result = url;
+  if (url.includes("?")) {
+    result = result.split("?")[0];
+  }
+  return result;
 }

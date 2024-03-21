@@ -1,5 +1,5 @@
 
-import { CONFIG_CONTENT_SEPARATOR, CONTENT_SEPARATOR, DOU_SEPARATOR, ENDSUFFIX, IURLITEM, PREFIX_SUFFIX, REGEX, SEPARATOR, getComponentPath, getFileAbsolutePath, getHideInMenu, getTargetCode, getTargetURIPath, getUrlString, readExcel, updateExcel } from "@/utils/index";
+import { CONFIG_CONTENT_SEPARATOR, CONTENT_SEPARATOR, DOU_SEPARATOR, ENDSUFFIX, IURLITEM, PREFIX_SUFFIX, REGEX, SEPARATOR, getComponentPath, getFileAbsolutePath, getHideInMenu, getTargetCode, getTargetURIPath, getUrlString, handleConfigUrl, readExcel, updateExcel } from "@/utils/index";
 const fs = require("fs");
 import sourceTree from './model'
 const { program } = require("commander");
@@ -28,19 +28,34 @@ function loopSourceTree(
       loopSourceTree(item.children, dataSource);
     } else if (item.buttons||targetDataItem) {
       targetDataItem?.forEach((tItem: any) => {
+        tItem.url = handleConfigUrl(tItem.url);
         if (tItem.code) {
           const button = item?.buttons?.find(
             (button: any) => tItem.code === button.code
           );
           if (button) {
             if (button.api) {
-              button.api.push({ method: tItem.method, path: tItem.url });
+              if (
+                !button.api.find(
+                  (item) => item.path === tItem.url&&
+                  item.method === tItem.method
+                )
+              ) {
+                button.api.push({ method: tItem.method, path: tItem.url });
+              }
             } else {
               button.api = [{ method: tItem.method, path: tItem.url }];
             }
           } else {
             if (item.api) {
-              item.api.push({ method: tItem.method, path: tItem.url });
+              if (
+                !item.api.find(
+                  (item) =>
+                    item.path === tItem.url && item.method === tItem.method
+                )
+              ) {
+                item.api.push({ method: tItem.method, path: tItem.url });
+              }
             } else {
               item.api = [{ method: tItem.method, path: tItem.url }];
             }
@@ -65,7 +80,7 @@ function handleDataSource(
   dataSource.forEach((item) => {
     const { path } = item;
     const pathList = path.split(" & ");
-    item.code = item.code.split(" | ")?.[1] || "";
+    item.code = item.code.trim().split(" ").pop()||"";
     pathList.forEach((uri) => {
       if(result[uri]){
         result[uri].push(item)
@@ -81,13 +96,10 @@ async function handleConfigRouteContent(dataSource:IFilesExcelDataListItem[],fil
   //   getFileAbsolutePath(filePath),
   //   "utf8"
   // );
-  const resultDataSource: Record<string,IFilesExcelDataListItem[]>=handleDataSource(dataSource)
-  loopSourceTree(
-    sourceTree,
-    resultDataSource,
-  );
+  const resultDataSource: Record<string, IFilesExcelDataListItem[]> =
+    handleDataSource(dataSource);
+  loopSourceTree(sourceTree, resultDataSource);
   console.log(sourceTree)
-  debugger
   fs.writeFileSync(filePath, JSON.stringify(sourceTree));
 
 
